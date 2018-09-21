@@ -52,6 +52,7 @@ template <typename T>
 void run_test(std::function<void(T&, T&)> func, const std::string & testname, int size, int iterations=10) {
     T a(size, size);
     T b(size, size);
+    randomize(b);
     vector<double> times(iterations);
     for (int i = 0; i < iterations; i++) {
         randomize(a);
