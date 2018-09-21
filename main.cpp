@@ -189,6 +189,17 @@ int main() {
 
     vector<int> sizes = {512, 1024, 2048, 4096, 8192};
 
+    cout << "Morton array:" << endl;
+
+    //run_test<simple_array<double>>(empty_test<simple_array<double>>, "empty", sizes, 10);
+    run_test<morton_array<double>>(copy_test<morton_array<double>>, "copy", sizes, iterations);
+    run_test<morton_array<double>>(copy_wo_test<morton_array<double>>, "copy_wo", sizes, iterations);
+    run_test<morton_array<double>>(copy_true_test<morton_array<double>>, "copy_true", sizes, iterations);
+    run_test<morton_array<double>>(sum_triplets_bad<morton_array<double>>, "triplets_bad", sizes, iterations);
+    run_test<morton_array<double>>(sum_triplets_good<morton_array<double>>, "triplets_good", sizes, iterations);
+    run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
+    run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
+
     cout << "Simple array:" << endl;
 
     //run_test<simple_array<double>>(empty_test<simple_array<double>>, "empty", sizes, 10);

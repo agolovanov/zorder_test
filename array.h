@@ -10,6 +10,8 @@
 
 #include <memory>
 #include <cstring>
+#include "morton.h"
+#include <cassert>
 
 template <typename T>
 class simple_array {
@@ -68,6 +70,32 @@ public:
     }
 };
 
+template <typename T>
+class morton_array {
+private:
+    const int n;
+    std::unique_ptr<T*[]> ptrs;
+    std::unique_ptr<T[]> data;
+
+public:
+    morton_array(int n1, int n2) : n(n1) {
+        assert(n1 == n2);
+        data = std::unique_ptr<T[]>(new T[n * n]);
+    }
+
+    inline T & operator() (int i, int j) const {
+        return data[encode(i, j, n)];
+    }
+
+    int get_n1() const { return n; }
+    int get_n2() const { return n; }
+
+    morton_array<T> & operator=(morton_array<T> & other) {
+        memcpy(data.get(), other.data.get(), n * n * sizeof(T));
+
+        return *this;
+    }
+};
 
 
 #endif /* ARRAY_H_ */

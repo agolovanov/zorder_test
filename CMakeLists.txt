@@ -6,4 +6,4 @@ find_package( Boost )
 include_directories( ${Boost_INCLUDE_DIRS} )
 add_executable(zorder_test main.cpp)
 target_link_libraries(zorder_test Boost::boost)
-
+add_executable(test_morton test_morton.cpp)
