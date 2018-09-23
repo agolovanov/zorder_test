@@ -12,6 +12,7 @@
 #include <cstring>
 #include "morton.h"
 #include <cassert>
+#include <stdexcept>
 
 template <typename T>
 class simple_array {
@@ -76,15 +77,23 @@ private:
     const int n;
     std::unique_ptr<T*[]> ptrs;
     std::unique_ptr<T[]> data;
-
+    morton_encoder encoder;
 public:
     morton_array(int n1, int n2) : n(n1) {
         assert(n1 == n2);
+        int pow = 0;
+        while ((1 << pow) < n) {
+            pow++;
+        }
+        if ((1 << pow) != n) {
+            throw std::invalid_argument("The size must be a power of two");
+        }
+        encoder = morton_encoder(pow);
         data = std::unique_ptr<T[]>(new T[n * n]);
     }
 
     inline T & operator() (int i, int j) const {
-        return data[encode(i, j, n)];
+        return data[encoder.encode(i, j)];
     }
 
     int get_n1() const { return n; }

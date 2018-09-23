@@ -176,15 +176,16 @@ void sum_pentlets_good(T & a, T & b) {
 
 int main() {
     /*
-    simple_array<double> a(4, 4);
+    morton_array<double> a(4, 4);
     randomize(a);
     print_array(a);
-    simple_array<double> b(4, 4);
-    copy_true_test(a, b);
+    morton_array<double> b(4, 4);
+    sum_triplets_good(a, b);
     print_array(b);
 
     return 0;
     */
+
     const int iterations = 5;
 
     vector<int> sizes = {512, 1024, 2048, 4096, 8192};
