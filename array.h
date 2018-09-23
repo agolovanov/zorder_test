@@ -75,25 +75,39 @@ template <typename T>
 class morton_array {
 private:
     const int n;
+    int pow;
     std::unique_ptr<T*[]> ptrs;
     std::unique_ptr<T[]> data;
-    morton_encoder encoder;
+    std::unique_ptr<int[]> cache;
+
+    int encode_calculate(int x) {
+        int res = 0;
+        for (int i = 0; i < pow; i++) {
+            res += (x & (1 << i)) << i;
+        }
+        return res;
+    }
 public:
     morton_array(int n1, int n2) : n(n1) {
         assert(n1 == n2);
-        int pow = 0;
+        pow = 0;
         while ((1 << pow) < n) {
             pow++;
         }
         if ((1 << pow) != n) {
             throw std::invalid_argument("The size must be a power of two");
         }
-        encoder = morton_encoder(pow);
         data = std::unique_ptr<T[]>(new T[n * n]);
+
+        cache = std::unique_ptr<int[]>(new int[n]);
+
+        for (int i = 0; i < n; i++) {
+            cache[i] = encode_calculate(i);
+        }
     }
 
     inline T & operator() (int i, int j) const {
-        return data[encoder.encode(i, j)];
+        return data[(cache[i] << 1) + cache[j]];
     }
 
     int get_n1() const { return n; }
