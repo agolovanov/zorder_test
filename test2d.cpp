@@ -27,10 +27,9 @@ double gen() {
 
 template <typename T>
 void randomize(T & a) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n2; j++) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             a(i, j) = gen();
         }
     }
@@ -38,10 +37,9 @@ void randomize(T & a) {
 
 template<typename T>
 void print_array(T& a) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n2; j++) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             cout << boost::format("%6.2f") % a(i, j);
         }
         cout << endl;
@@ -50,8 +48,8 @@ void print_array(T& a) {
 
 template <typename T>
 void run_test(std::function<void(T&, T&)> func, const std::string & testname, int size, int iterations=10) {
-    T a(size, size);
-    T b(size, size);
+    T a(size);
+    T b(size);
     randomize(b);
     vector<double> times(iterations);
     for (int i = 0; i < iterations; i++) {
@@ -81,10 +79,9 @@ void empty_test(T & a, T & b) { }
 
 template <typename T>
 void copy_test(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n2; j++) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             b(i, j) = a(i, j);
         }
     }
@@ -92,10 +89,9 @@ void copy_test(T & a, T & b) {
 
 template <typename T>
 void copy_wo_test(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int j = 0; j < n2; j++) {
-        for (int i = 0; i < n1; i++) {
+    int n = a.get_n();
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < n; i++) {
             b(i, j) = a(i, j);
         }
     }
@@ -108,78 +104,74 @@ void copy_true_test(T & a, T & b) {
 
 template <typename T>
 void sum_triplets_bad(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int j = 0; j < n2; j++) {
+    int n = a.get_n();
+    for (int j = 0; j < n; j++) {
         b(0, j) = a(0, j) + a(1, j);
     }
-    for (int i = 1; i < n1 - 1; i++) {
-        for (int j = 0; j < n2; j++) {
+    for (int i = 1; i < n - 1; i++) {
+        for (int j = 0; j < n; j++) {
             b(i, j) = a(i-1, j) + a(i, j) + a(i+1, j);
         }
     }
-    for (int j = 0; j < n2; j++) {
-        b(n1-1, j) = a(n1-2, j) + a(n1-1, j);
+    for (int j = 0; j < n; j++) {
+        b(n-1, j) = a(n-2, j) + a(n-1, j);
     }
 }
 
 template <typename T>
 void sum_triplets_good(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int i = 0; i < n1; i++) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
         b(i, 0) = a(i, 0) + a(i, 1);
-        for (int j = 1; j < n2-1; j++) {
+        for (int j = 1; j < n-1; j++) {
             b(i, j) = a(i, j-1) + a(i, j) + a(i, j+1);
         }
-        b(i, n2-1) = a(i, n2-1) + a(i, n2-2);
+        b(i, n-1) = a(i, n-1) + a(i, n-2);
     }
 }
 
 template <typename T>
 void sum_pentlets_bad(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int j = 0; j < n2; j++) {
+    int n = a.get_n();
+    for (int j = 0; j < n; j++) {
         b(0, j) = a(0, j) + a(1, j) + a(2, j);
     }
-    for (int j = 0; j < n2; j++) {
+    for (int j = 0; j < n; j++) {
         b(1, j) = a(0, j) + a(1, j) + a(2, j) + a(3, j);
     }
-    for (int i = 2; i < n1 - 2; i++) {
-        for (int j = 0; j < n2; j++) {
+    for (int i = 2; i < n - 2; i++) {
+        for (int j = 0; j < n; j++) {
             b(i, j) = a(i-2, j) + a(i-1, j) + a(i, j) + a(i+1, j) + a(i+2, j);
         }
     }
-    for (int j = 0; j < n2; j++) {
-        b(n1-2, j) = a(n1-4, j) + a(n1-3, j) + a(n1-2, j) + a(n1-1, j);
+    for (int j = 0; j < n; j++) {
+        b(n-2, j) = a(n-4, j) + a(n-3, j) + a(n-2, j) + a(n-1, j);
     }
-    for (int j = 0; j < n2; j++) {
-        b(n1-1, j) = a(n1-3, j) + a(n1-2, j) + a(n1-1, j);
+    for (int j = 0; j < n; j++) {
+        b(n-1, j) = a(n-3, j) + a(n-2, j) + a(n-1, j);
     }
 }
 
 template <typename T>
 void sum_pentlets_good(T & a, T & b) {
-    int n1 = a.get_n1();
-    int n2 = a.get_n2();
-    for (int i = 0; i < n1; i++) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
         b(i, 0) = a(i, 0) + a(i, 1) + a(i, 2);
         b(i, 1) = a(i, 0) + a(i, 1) + a(i, 2) + a(i, 3);
-        for (int j = 2; j < n2-2; j++) {
+        for (int j = 2; j < n-2; j++) {
             b(i, j) = a(i, j-2) + a(i, j-1) + a(i, j) + a(i, j+1) + a(i, j+2);
         }
-        b(i, n2-2) = a(i, n2-4) + a(i, n2-3) + a(i, n2-2) + a(i, n2-1);
-        b(i, n2-1) = a(i, n2-3) + a(i, n2-2) + a(i, n2-1);
+        b(i, n-2) = a(i, n-4) + a(i, n-3) + a(i, n-2) + a(i, n-1);
+        b(i, n-1) = a(i, n-3) + a(i, n-2) + a(i, n-1);
     }
 }
 
 int main() {
     /*
-    morton_array<double> a(4, 4);
+    morton_array<double> a(4);
     randomize(a);
     print_array(a);
-    morton_array<double> b(4, 4);
+    morton_array<double> b(4);
     sum_triplets_good(a, b);
     print_array(b);
 

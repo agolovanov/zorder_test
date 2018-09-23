@@ -17,24 +17,22 @@
 template <typename T>
 class simple_array {
 private:
-    const int n1;
-    const int n2;
+    const int n;
     std::unique_ptr<T[]> data;
 
 public:
-    simple_array(int n1, int n2) : n1(n1), n2(n2) {
-        data = std::unique_ptr<T[]>(new T[n1 * n2]);
+    simple_array(int n) : n(n) {
+        data = std::unique_ptr<T[]>(new T[n * n]);
     }
 
     inline T & operator()(int i, int j) const {
-        return data[n2 * i + j];
+        return data[n * i + j];
     }
 
-    int get_n1() const { return n1; }
-    int get_n2() const { return n2; }
+    int get_n() const { return n; }
 
     simple_array<T> & operator=(simple_array<T> & other) {
-        memcpy(data.get(), other.data.get(), n1 * n2 * sizeof(T));
+        memcpy(data.get(), other.data.get(), n * n * sizeof(T));
 
         return *this;
     }
@@ -43,17 +41,16 @@ public:
 template <typename T>
 class cached_array {
 private:
-    const int n1;
-    const int n2;
+    const int n;
     std::unique_ptr<T*[]> ptrs;
     std::unique_ptr<T[]> data;
 
 public:
-    cached_array(int n1, int n2) : n1(n1), n2(n2) {
-        data = std::unique_ptr<T[]>(new T[n1 * n2]);
-        ptrs = std::unique_ptr<T*[]>(new T*[n1]);
-        for (int i = 0; i < n1; i++) {
-            ptrs[i] = &(data[n2 * i]);
+    cached_array(int n) : n(n) {
+        data = std::unique_ptr<T[]>(new T[n * n]);
+        ptrs = std::unique_ptr<T*[]>(new T*[n]);
+        for (int i = 0; i < n; i++) {
+            ptrs[i] = &(data[n * i]);
         }
     }
 
@@ -61,11 +58,10 @@ public:
         return ptrs[i][j];
     }
 
-    int get_n1() const { return n1; }
-    int get_n2() const { return n2; }
+    int get_n() const { return n; }
 
     cached_array<T> & operator=(cached_array<T> & other) {
-        memcpy(data.get(), other.data.get(), n1 * n2 * sizeof(T));
+        memcpy(data.get(), other.data.get(), n * n * sizeof(T));
 
         return *this;
     }
@@ -76,7 +72,6 @@ class morton_array {
 private:
     const int n;
     int pow;
-    std::unique_ptr<T*[]> ptrs;
     std::unique_ptr<T[]> data;
     std::unique_ptr<int[]> cache;
 
@@ -88,8 +83,7 @@ private:
         return res;
     }
 public:
-    morton_array(int n1, int n2) : n(n1) {
-        assert(n1 == n2);
+    morton_array(int n) : n(n) {
         pow = 0;
         while ((1 << pow) < n) {
             pow++;
@@ -110,8 +104,7 @@ public:
         return data[(cache[i] << 1) + cache[j]];
     }
 
-    int get_n1() const { return n; }
-    int get_n2() const { return n; }
+    int get_n() const { return n; }
 
     morton_array<T> & operator=(morton_array<T> & other) {
         memcpy(data.get(), other.data.get(), n * n * sizeof(T));
