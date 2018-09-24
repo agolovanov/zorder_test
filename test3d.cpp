@@ -6,11 +6,15 @@
 #include <boost/format.hpp>
 #include <vector>
 #include <cmath>
+#include "mpi.h"
 
 using namespace std;
 
 uniform_real_distribution<double> generator { -10, 10 };
 default_random_engine re;
+
+int mpi_rank;
+int mpi_size;
 
 const double GB = 1024 * 1024 * 1024;
 
@@ -39,17 +43,22 @@ void run_test(std::function<void(T&, T&)> func, const std::string & testname, in
     vector<double> times(iterations);
     for (int i = 0; i < iterations; i++) {
         randomize(a);
+        MPI_Barrier(MPI_COMM_WORLD);
         chrono::steady_clock::time_point begin = chrono::steady_clock::now();
         func(a, b);
+        MPI_Barrier(MPI_COMM_WORLD);
         chrono::steady_clock::time_point end = chrono::steady_clock::now();
         times[i] = chrono::duration_cast<chrono::nanoseconds>(end - begin).count() / 1e6;
     }
-    double avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
-    double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
-    double standard_deviation = sqrt(avg_sq - avg * avg);
-    double throughput = (size * size * size * sizeof(double)) / GB * 1e3 / avg; // Gb / s
-    cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
-            << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput << endl;
+    if (mpi_rank == 0) {
+        double avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
+        double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
+        double standard_deviation = sqrt(avg_sq - avg * avg);
+        double throughput = (mpi_size * size * size * size * sizeof(double)) / GB * 1e3 / avg; // Gb / s
+        cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
+                << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput
+                << endl;
+    }
 }
 
 template <typename T>
@@ -179,13 +188,19 @@ void sum_pentlets_good(T & a, T & b) {
     }
 }
 
+int main(int argc, char **argv) {
 
-int main() {
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
     const int iterations = 5;
 
     vector<int> sizes = {32, 64, 128, 256, 512};
 
-    cout << "Morton array:" << endl;
+    if (mpi_rank == 0) {
+        cout << "Morton array:" << endl;
+    }
 
     run_test<morton_array<double>>(copy_test<morton_array<double>>, "copy", sizes, iterations);
     run_test<morton_array<double>>(copy_wo_test<morton_array<double>>, "copy_wo", sizes, iterations);
@@ -195,7 +210,9 @@ int main() {
     run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
 
-    cout << "Simple array:" << endl;
+    if (mpi_rank == 0) {
+        cout << "Simple array:" << endl;
+    }
 
     run_test<simple_array<double>>(copy_test<simple_array<double>>, "copy", sizes, iterations);
     run_test<simple_array<double>>(copy_wo_test<simple_array<double>>, "copy_wo", sizes, iterations);
@@ -205,7 +222,9 @@ int main() {
     run_test<simple_array<double>>(sum_pentlets_bad<simple_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<simple_array<double>>(sum_pentlets_good<simple_array<double>>, "pentlets_good", sizes, iterations);
 
-    cout << "Cached array:" << endl;
+    if (mpi_rank == 0) {
+        cout << "Cached array:" << endl;
+    }
 
     run_test<cached_array<double>>(copy_test<cached_array<double>>, "copy", sizes, iterations);
     run_test<cached_array<double>>(copy_wo_test<cached_array<double>>, "copy_wo", sizes, iterations);
@@ -215,5 +234,6 @@ int main() {
     run_test<cached_array<double>>(sum_pentlets_bad<cached_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<cached_array<double>>(sum_pentlets_good<cached_array<double>>, "pentlets_good", sizes, iterations);
 
+    MPI_Finalize();
     return 0;
 }
