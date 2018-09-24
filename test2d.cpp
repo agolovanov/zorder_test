@@ -13,6 +13,7 @@
 #include <boost/format.hpp>
 #include <vector>
 #include <cmath>
+#include <omp.h>
 
 using namespace std;
 
@@ -28,6 +29,7 @@ double gen() {
 template <typename T>
 void randomize(T & a) {
     int n = a.get_n();
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             a(i, j) = gen();
@@ -64,7 +66,7 @@ void run_test(std::function<void(T&, T&)> func, const std::string & testname, in
     double standard_deviation = sqrt(avg_sq - avg * avg);
     double throughput = (size * size * sizeof(double)) / GB * 1e3 / avg; // Gb / s
     cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
-            << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %4.2f Gb/s") % throughput << endl;
+            << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput << endl;
 }
 
 template <typename T>
@@ -80,6 +82,7 @@ void empty_test(T & a, T & b) { }
 template <typename T>
 void copy_test(T & a, T & b) {
     int n = a.get_n();
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             b(i, j) = a(i, j);
@@ -90,6 +93,7 @@ void copy_test(T & a, T & b) {
 template <typename T>
 void copy_wo_test(T & a, T & b) {
     int n = a.get_n();
+    #pragma omp parallel for
     for (int j = 0; j < n; j++) {
         for (int i = 0; i < n; i++) {
             b(i, j) = a(i, j);
@@ -108,6 +112,7 @@ void sum_triplets_bad(T & a, T & b) {
     for (int j = 0; j < n; j++) {
         b(0, j) = a(0, j) + a(1, j);
     }
+    #pragma omp parallel for
     for (int i = 1; i < n - 1; i++) {
         for (int j = 0; j < n; j++) {
             b(i, j) = a(i-1, j) + a(i, j) + a(i+1, j);
@@ -121,6 +126,7 @@ void sum_triplets_bad(T & a, T & b) {
 template <typename T>
 void sum_triplets_good(T & a, T & b) {
     int n = a.get_n();
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         b(i, 0) = a(i, 0) + a(i, 1);
         for (int j = 1; j < n-1; j++) {
@@ -139,6 +145,7 @@ void sum_pentlets_bad(T & a, T & b) {
     for (int j = 0; j < n; j++) {
         b(1, j) = a(0, j) + a(1, j) + a(2, j) + a(3, j);
     }
+    #pragma omp parallel for
     for (int i = 2; i < n - 2; i++) {
         for (int j = 0; j < n; j++) {
             b(i, j) = a(i-2, j) + a(i-1, j) + a(i, j) + a(i+1, j) + a(i+2, j);
@@ -155,6 +162,7 @@ void sum_pentlets_bad(T & a, T & b) {
 template <typename T>
 void sum_pentlets_good(T & a, T & b) {
     int n = a.get_n();
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         b(i, 0) = a(i, 0) + a(i, 1) + a(i, 2);
         b(i, 1) = a(i, 0) + a(i, 1) + a(i, 2) + a(i, 3);
