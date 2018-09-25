@@ -84,7 +84,7 @@ private:
     int encode_calculate(int x) {
         int res = 0;
         for (int i = 0; i < pow; i++) {
-            res += (x & (1 << i)) << i;
+            res += (x & (1 << i)) << (2 * i);
         }
         return res;
     }
@@ -107,7 +107,7 @@ public:
     }
 
     inline T & operator() (int i, int j, int k) const {
-        return data[(cache[i] << 2) + (cache[j] << 1) + cache[k]];
+        return data[(cache[i] << 2) ^ (cache[j] << 1) ^ cache[k]];
     }
 
     int get_n() const { return n; }

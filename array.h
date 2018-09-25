@@ -101,7 +101,7 @@ public:
     }
 
     inline T & operator() (int i, int j) const {
-        return data[(cache[i] << 1) + cache[j]];
+        return data[(cache[i] << 1) ^ cache[j]];
     }
 
     int get_n() const { return n; }

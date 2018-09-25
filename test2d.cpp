@@ -33,7 +33,6 @@ double gen() {
 template <typename T>
 void randomize(T & a) {
     int n = a.get_n();
-    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             a(i, j) = gen();
@@ -203,6 +202,8 @@ int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    re.seed(chrono::system_clock::now().time_since_epoch().count());
 
     const int iterations = 5;
 
