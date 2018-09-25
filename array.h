@@ -104,6 +104,14 @@ public:
         return data[(cache[i] << 1) ^ cache[j]];
     }
 
+    inline T & operator[] (size_t i) const {
+        return data[i];
+    }
+
+    inline int get_cache(int i) const {
+        return cache[i];
+    }
+
     int get_n() const { return n; }
 
     morton_array<T> & operator=(morton_array<T> & other) {

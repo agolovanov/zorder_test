@@ -198,6 +198,53 @@ void sum_neighbors(T & a, T & b) {
     b(n-1, n-1) = a(n-1, n-1);
 }
 
+void sum_triplets_good_morton(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        int ii = a.get_cache(i) << 1;
+        int jj_prev = a.get_cache(0);
+        int jj = a.get_cache(0);
+        int jj_next = a.get_cache(1);
+        b[ii ^ jj] = a[ii ^ jj] + a[ii ^ jj_next];
+        for (int j = 1; j < n-1; j++) {
+            jj_prev = jj;
+            jj = jj_next;
+            jj_next = a.get_cache(j+1);
+            b[ii ^ jj] = a[ii ^ jj_prev] + a[ii ^ jj] + a[ii ^ jj_next];
+        }
+        b[ii ^ jj_next] = a[ii ^ jj_next] + a[ii ^ jj];
+    }
+}
+
+void sum_neighbors_morton(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_n();
+    int ii;
+    int ii_next = a.get_cache(0) << 1;
+    for (int i = 0; i < n-1; i++) {
+        ii = ii_next;
+        ii_next = a.get_cache(i+1) << 1;
+        int jj;
+        int jj_next = a.get_cache(0);
+        for (int j = 0; j < n-1; j++) {
+            jj = jj_next;
+            jj_next = a.get_cache(j+1);
+            b[ii ^ jj] = a[ii ^ jj] + a[ii_next ^ jj_next] + a[ii ^ jj_next] + a[ii_next ^ jj_next];
+        }
+        jj = jj_next;
+        b[ii ^ jj] = a[ii ^ jj] + a[ii_next ^ jj];
+    }
+    int jj;
+    int jj_next = a.get_cache(0);
+    ii = ii_next;
+    for (int j = 0; j < n-1; j++) {
+        jj = jj_next;
+        jj_next = a.get_cache(j+1);
+        b[ii ^ jj] = a[ii ^ jj] + a[ii ^ jj_next];
+    }
+    jj = jj_next;
+    b[ii ^ jj] = a[ii ^ jj];
+}
+
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -219,9 +266,11 @@ int main(int argc, char **argv) {
     run_test<morton_array<double>>(copy_true_test<morton_array<double>>, "copy_true", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_bad<morton_array<double>>, "triplets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_good<morton_array<double>>, "triplets_good", sizes, iterations);
+    run_test<morton_array<double>>(sum_triplets_good_morton, "triplets_good_m", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors<morton_array<double>>, "sum_neighbors", sizes, iterations);
+    run_test<morton_array<double>>(sum_neighbors_morton, "sum_neighbors_m", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Simple array:" << endl;
