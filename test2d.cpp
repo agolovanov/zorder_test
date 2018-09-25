@@ -183,17 +183,23 @@ void sum_pentlets_good(T & a, T & b) {
     }
 }
 
-int main(int argc, char **argv) {
-    /*
-    morton_array<double> a(4);
-    randomize(a);
-    print_array(a);
-    morton_array<double> b(4);
-    sum_triplets_good(a, b);
-    print_array(b);
+template <typename T>
+void sum_neighbors(T & a, T & b) {
+    int n = a.get_n();
+    #pragma omp parallel for
+    for (int i = 0; i < n-1; i++) {
+        for (int j = 0; j < n-1; j++) {
+            b(i, j) = a(i, j) + a(i+1, j) + a(i, j+1) + a(i+1, j+1);
+        }
+        b(i, n-1) = a(i, n-1) + a(i+1, n-1);
+    }
+    for (int j = 0; j < n-1; j++) {
+        b(n-1, j) = a(n-1, j) + a(n-1, j+1);
+    }
+    b(n-1, n-1) = a(n-1, n-1);
+}
 
-    return 0;
-    */
+int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -214,6 +220,7 @@ int main(int argc, char **argv) {
     run_test<morton_array<double>>(sum_triplets_good<morton_array<double>>, "triplets_good", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
+    run_test<morton_array<double>>(sum_neighbors<morton_array<double>>, "sum_neighbors", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Simple array:" << endl;
@@ -227,6 +234,7 @@ int main(int argc, char **argv) {
     run_test<simple_array<double>>(sum_triplets_good<simple_array<double>>, "triplets_good", sizes, iterations);
     run_test<simple_array<double>>(sum_pentlets_bad<simple_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<simple_array<double>>(sum_pentlets_good<simple_array<double>>, "pentlets_good", sizes, iterations);
+    run_test<simple_array<double>>(sum_neighbors<simple_array<double>>, "sum_neighbors", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Cached array:" << endl;
@@ -239,6 +247,7 @@ int main(int argc, char **argv) {
     run_test<cached_array<double>>(sum_triplets_good<cached_array<double>>, "triplets_good", sizes, iterations);
     run_test<cached_array<double>>(sum_pentlets_bad<cached_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<cached_array<double>>(sum_pentlets_good<cached_array<double>>, "pentlets_good", sizes, iterations);
+    run_test<cached_array<double>>(sum_neighbors<cached_array<double>>, "sum_neighbors", sizes, iterations);
 
     MPI_Finalize();
     return 0;
