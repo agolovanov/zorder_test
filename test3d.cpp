@@ -54,7 +54,7 @@ void run_test(std::function<void(T&, T&)> func, const std::string & testname, in
         double avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
         double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
         double standard_deviation = sqrt(avg_sq - avg * avg);
-        double throughput = (mpi_size * size * size * size * sizeof(double)) / GB * 1e3 / avg; // Gb / s
+        double throughput = (static_cast<double>(mpi_size) * size * size * size * sizeof(double)) / GB * 1e3 / avg; // Gb / s
         cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
                 << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput
                 << endl;
