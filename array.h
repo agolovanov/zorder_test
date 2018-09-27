@@ -74,6 +74,8 @@ private:
     int pow;
     std::unique_ptr<T[]> data;
     std::unique_ptr<int[]> cache;
+    int x_mask;
+    int y_mask;
 
     int encode_calculate(int x) {
         int res = 0;
@@ -98,10 +100,12 @@ public:
         for (int i = 0; i < n; i++) {
             cache[i] = encode_calculate(i);
         }
+        x_mask = cache[n-1];
+        y_mask = cache[n-1] << 1;
     }
 
     inline T & operator() (int i, int j) const {
-        return data[(cache[i] << 1) ^ cache[j]];
+        return data[(cache[i] << 1) | cache[j]];
     }
 
     inline T & operator[] (size_t i) const {
@@ -114,10 +118,33 @@ public:
 
     int get_n() const { return n; }
 
+    int get_size() const { return n * n; }
+
     morton_array<T> & operator=(morton_array<T> & other) {
         memcpy(data.get(), other.data.get(), n * n * sizeof(T));
 
         return *this;
+    }
+
+    inline bool is_xmin(int i) const { return ((i & x_mask) == 0); }
+    inline bool is_xmax(int i) const { return ((i & x_mask) == x_mask); }
+    inline bool is_ymin(int i) const { return ((i & y_mask) == 0); }
+    inline bool is_ymax(int i) const { return ((i & y_mask) == y_mask); }
+
+    inline int get_x_prev(int i) const {
+        return (i & y_mask) | (((i & x_mask) - 1) & x_mask);
+    }
+
+    inline int get_x_next(int i) const {
+        return (i & y_mask) | (((i | y_mask) + 1) & x_mask);
+    }
+
+    inline int get_y_prev(int i) const {
+        return (i & x_mask) | (((i & y_mask) - 1) & y_mask);
+    }
+
+    inline int get_y_next(int i) const {
+        return (i & x_mask) | (((i | x_mask) + 1) & y_mask);
     }
 };
 

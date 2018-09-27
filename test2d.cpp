@@ -109,6 +109,13 @@ void copy_wo_test(T & a, T & b) {
     }
 }
 
+void copy_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        b[i] = a[i];
+    }
+}
+
 template <typename T>
 void copy_true_test(T & a, T & b) {
     b = a;
@@ -131,6 +138,21 @@ void sum_triplets_bad(T & a, T & b) {
     }
 }
 
+void sum_triplets_bad_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        if (a.is_ymin(i)) {
+            //cout << i << "is ymin";
+            b[i] = a[i] + a[a.get_y_next(i)];
+        } else if (a.is_ymax(i)) {
+            //cout << i << "is ymax";
+            b[i] = a[i] + a[a.get_y_prev(i)];
+        } else {
+            b[i] = a[i] + a[a.get_y_next(i)] + a[a.get_y_prev(i)];
+        }
+    }
+}
+
 template <typename T>
 void sum_triplets_good(T & a, T & b) {
     int n = a.get_n();
@@ -141,6 +163,19 @@ void sum_triplets_good(T & a, T & b) {
             b(i, j) = a(i, j-1) + a(i, j) + a(i, j+1);
         }
         b(i, n-1) = a(i, n-1) + a(i, n-2);
+    }
+}
+
+void sum_triplets_good_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        if (a.is_xmin(i)) {
+            b[i] = a[i] + a[a.get_x_next(i)];
+        } else if (a.is_xmax(i)) {
+            b[i] = a[i] + a[a.get_x_prev(i)];
+        } else {
+            b[i] = a[i] + a[a.get_x_next(i)] + a[a.get_x_prev(i)];
+        }
     }
 }
 
@@ -198,21 +233,41 @@ void sum_neighbors(T & a, T & b) {
     b(n-1, n-1) = a(n-1, n-1);
 }
 
+void sum_neighbors_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        if (a.is_xmax(i)) {
+            if (a.is_ymax(i)) {
+                b[i] = a[i];
+            } else {
+                b[i] = a[i] + a[a.get_y_next(i)];
+            }
+        } else if (a.is_ymax(i)) {
+            b[i] = a[i] + a[a.get_x_next(i)];
+        } else {
+            int x_next = a.get_x_next(i);
+            int y_next = a.get_y_next(i);
+            int xy_next = a.get_x_next(y_next);
+            b[i] = a[i] + a[x_next] + a[y_next] + a[xy_next];
+        }
+    }
+}
+
 void sum_triplets_good_morton(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_n();
     for (int i = 0; i < n; i++) {
         int ii = a.get_cache(i) << 1;
-        int jj_prev = a.get_cache(0);
-        int jj = a.get_cache(0);
-        int jj_next = a.get_cache(1);
-        b[ii ^ jj] = a[ii ^ jj] + a[ii ^ jj_next];
+        int index_prev = 0;
+        int index = ii ^ a.get_cache(0);
+        int index_next = ii ^ a.get_cache(1);
+        b[index] = a[index] + a[index_next];
         for (int j = 1; j < n-1; j++) {
-            jj_prev = jj;
-            jj = jj_next;
-            jj_next = a.get_cache(j+1);
-            b[ii ^ jj] = a[ii ^ jj_prev] + a[ii ^ jj] + a[ii ^ jj_next];
+            index_prev = index;
+            index = index_next;
+            index_next = ii ^ a.get_cache(j+1);
+            b[index] = a[index_prev] + a[index] + a[index_next];
         }
-        b[ii ^ jj_next] = a[ii ^ jj_next] + a[ii ^ jj];
+        b[index_next] = a[index_next] + a[index];
     }
 }
 
@@ -223,15 +278,21 @@ void sum_neighbors_morton(morton_array<double> & a, morton_array<double> & b) {
     for (int i = 0; i < n-1; i++) {
         ii = ii_next;
         ii_next = a.get_cache(i+1) << 1;
-        int jj;
-        int jj_next = a.get_cache(0);
+        int index_00;
+        int index_01 = ii ^ a.get_cache(0);
+        int index_10;
+        int index_11 = ii_next ^ a.get_cache(0);
         for (int j = 0; j < n-1; j++) {
-            jj = jj_next;
-            jj_next = a.get_cache(j+1);
-            b[ii ^ jj] = a[ii ^ jj] + a[ii_next ^ jj_next] + a[ii ^ jj_next] + a[ii_next ^ jj_next];
+            int jj_next = a.get_cache(j+1);
+            index_00 = index_01;
+            index_01 = ii ^ jj_next;
+            index_10 = index_11;
+            index_11 = ii_next ^ jj_next;
+            b[index_00] = a[index_00] + a[index_01] + a[index_10] + a[index_11];
         }
-        jj = jj_next;
-        b[ii ^ jj] = a[ii ^ jj] + a[ii_next ^ jj];
+        index_00 = index_01;
+        index_10 = index_11;
+        b[index_00] = a[index_00] + a[index_10];
     }
     int jj;
     int jj_next = a.get_cache(0);
@@ -245,10 +306,99 @@ void sum_neighbors_morton(morton_array<double> & a, morton_array<double> & b) {
     b[ii ^ jj] = a[ii ^ jj];
 }
 
+template <typename T, typename V>
+void copy(T & a, V & b) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            b(i, j) = a(i, j);
+        }
+    }
+}
+
+template <typename T, typename V>
+bool is_equal(T & a, V & b) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (std::fabs(b(i, j) - a(i, j)) > 1e-6) return false;
+        }
+    }
+    return true;
+}
+
+void run_checks(int size) {
+    cout << "Checking size " << size << "..." << endl;
+    morton_array<double> a(size);
+
+    {
+        cached_array<double> b(size);
+        simple_array<double> c(size);
+
+        randomize(a);
+        copy(a, b);
+        copy(a, c);
+        if (!is_equal(a, b)) cout << "a and b are different" << endl;
+        if (!is_equal(a, c)) cout << "a and c are different" << endl;
+        if (!is_equal(b, c)) cout << "b and c are different" << endl;
+    }
+
+    morton_array<double> b(size);
+    morton_array<double> c(size);
+
+    copy(a, b);
+    copy_z(a, c);
+    if (!is_equal(b, c)) cout << "copy_z is different" << endl;
+
+    sum_triplets_bad(a, b);
+    sum_triplets_bad_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_triplets_z is different" << endl;
+
+    sum_triplets_good(a, b);
+    sum_triplets_good_morton(a, c);
+    if (!is_equal(b, c)) cout << "sum_triplets_good is different for Morton" << endl;
+
+    sum_neighbors(a, b);
+    sum_neighbors_morton(a, c);
+    if (!is_equal(b, c)) cout << "sum_neighbors_morton is different" << endl;
+
+    sum_neighbors_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_neighbors_z is different" << endl;
+}
+
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    /*
+    const int size = 8;
+    morton_array<double> a(size);
+    for (int i = 0; i < size * size; i++) {
+        if (a.is_xmin(i)) {
+            cout << i << " is xmin" << endl;
+        } else {
+            cout << i << " x_prev is " << a.get_x_prev(i) << endl;
+        }
+        if (a.is_xmax(i)) {
+            cout << i << " is xmax" << endl;
+        } else {
+            cout << i << " x_next is " << a.get_x_next(i) << endl;
+        }
+        if (a.is_ymin(i)) {
+            cout << i << " is ymin" << endl;
+        } else {
+            cout << i << " y_prev is " << a.get_y_prev(i) << endl;
+        }
+        if (a.is_ymax(i)) {
+            cout << i << " is ymax" << endl;
+        } else {
+            cout << i << " y_next is " << a.get_y_next(i) << endl;
+        }
+    }
+
+    return 0;
+    */
 
     re.seed(chrono::system_clock::now().time_since_epoch().count());
 
@@ -257,26 +407,33 @@ int main(int argc, char **argv) {
     vector<int> sizes = {512, 1024, 2048, 4096, 8192};
 
     if (mpi_rank == 0) {
+        for (auto size : sizes) {
+            run_checks(size);
+        }
+    }
+
+    if (mpi_rank == 0) {
         cout << "Morton array:" << endl;
     }
 
-    //run_test<simple_array<double>>(empty_test<simple_array<double>>, "empty", sizes, 10);
     run_test<morton_array<double>>(copy_test<morton_array<double>>, "copy", sizes, iterations);
     run_test<morton_array<double>>(copy_wo_test<morton_array<double>>, "copy_wo", sizes, iterations);
+    run_test<morton_array<double>>(copy_z, "copy_z", sizes, iterations);
     run_test<morton_array<double>>(copy_true_test<morton_array<double>>, "copy_true", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_bad<morton_array<double>>, "triplets_bad", sizes, iterations);
+    run_test<morton_array<double>>(sum_triplets_bad_z, "triplets_bad_z", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_good<morton_array<double>>, "triplets_good", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_good_morton, "triplets_good_m", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors<morton_array<double>>, "sum_neighbors", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors_morton, "sum_neighbors_m", sizes, iterations);
+    run_test<morton_array<double>>(sum_neighbors_z, "sum_neighbors_z", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Simple array:" << endl;
     }
 
-    //run_test<simple_array<double>>(empty_test<simple_array<double>>, "empty", sizes, 10);
     run_test<simple_array<double>>(copy_test<simple_array<double>>, "copy", sizes, iterations);
     run_test<simple_array<double>>(copy_wo_test<simple_array<double>>, "copy_wo", sizes, iterations);
     run_test<simple_array<double>>(copy_true_test<simple_array<double>>, "copy_true", sizes, iterations);
