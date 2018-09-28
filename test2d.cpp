@@ -350,6 +350,18 @@ void run_checks(int size) {
     morton_array<double> c(size);
 
     copy(a, b);
+    copy_test(a, c);
+    if (!is_equal(b, c)) cout << "copy_test is different" << endl;
+
+    copy(a, b);
+    copy_wo_test(a, c);
+    if (!is_equal(b, c)) cout << "copy_wo_test is different" << endl;
+
+    copy(a, b);
+    copy_true_test(a, c);
+    if (!is_equal(b, c)) cout << "copy_true_test is different" << endl;
+
+    copy(a, b);
     copy_z(a, c);
     if (!is_equal(b, c)) cout << "copy_z is different" << endl;
 
