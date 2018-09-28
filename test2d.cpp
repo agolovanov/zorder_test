@@ -142,10 +142,8 @@ void sum_triplets_bad_z(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_size();
     for (int i = 0; i < n; i++) {
         if (a.is_ymin(i)) {
-            //cout << i << "is ymin";
             b[i] = a[i] + a[a.get_y_next(i)];
         } else if (a.is_ymax(i)) {
-            //cout << i << "is ymax";
             b[i] = a[i] + a[a.get_y_prev(i)];
         } else {
             b[i] = a[i] + a[a.get_y_next(i)] + a[a.get_y_prev(i)];
@@ -202,6 +200,35 @@ void sum_pentlets_bad(T & a, T & b) {
     }
 }
 
+void sum_pentlets_bad_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        if (a.is_ymin(i)) {
+            int i1 = a.get_y_next(i);
+            int i2 = a.get_y_next(i1);
+            b[i] = a[i] + a[i1] + a[i2];
+        } else if (a.is_ymax(i)) {
+            int i1 = a.get_y_prev(i);
+            int i2 = a.get_y_prev(i1);
+            b[i] = a[i] + a[i1] + a[i2];
+        } else {
+            int i1_prev = a.get_y_prev(i);
+            int i1_next = a.get_y_next(i);
+            if (a.is_ymin(i1_prev)) {
+                int i2_next = a.get_y_next(i1_next);
+                b[i] = a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
+            } else if (a.is_ymax(i1_next)) {
+                int i2_prev = a.get_y_prev(i1_prev);
+                b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next];
+            } else {
+                int i2_next = a.get_y_next(i1_next);
+                int i2_prev = a.get_y_prev(i1_prev);
+                b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
+            }
+        }
+    }
+}
+
 template <typename T>
 void sum_pentlets_good(T & a, T & b) {
     int n = a.get_n();
@@ -214,6 +241,35 @@ void sum_pentlets_good(T & a, T & b) {
         }
         b(i, n-2) = a(i, n-4) + a(i, n-3) + a(i, n-2) + a(i, n-1);
         b(i, n-1) = a(i, n-3) + a(i, n-2) + a(i, n-1);
+    }
+}
+
+void sum_pentlets_good_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        if (a.is_xmin(i)) {
+            int i1 = a.get_x_next(i);
+            int i2 = a.get_x_next(i1);
+            b[i] = a[i] + a[i1] + a[i2];
+        } else if (a.is_xmax(i)) {
+            int i1 = a.get_x_prev(i);
+            int i2 = a.get_x_prev(i1);
+            b[i] = a[i] + a[i1] + a[i2];
+        } else {
+            int i1_prev = a.get_x_prev(i);
+            int i1_next = a.get_x_next(i);
+            if (a.is_xmin(i1_prev)) {
+                int i2_next = a.get_x_next(i1_next);
+                b[i] = a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
+            } else if (a.is_xmax(i1_next)) {
+                int i2_prev = a.get_x_prev(i1_prev);
+                b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next];
+            } else {
+                int i2_next = a.get_x_next(i1_next);
+                int i2_prev = a.get_x_prev(i1_prev);
+                b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
+            }
+        }
     }
 }
 
@@ -299,7 +355,19 @@ void run_checks(int size) {
 
     sum_triplets_bad(a, b);
     sum_triplets_bad_z(a, c);
-    if (!is_equal(b, c)) cout << "sum_triplets_z is different" << endl;
+    if (!is_equal(b, c)) cout << "sum_triplets_bad_z is different" << endl;
+
+    sum_triplets_good(a, b);
+    sum_triplets_good_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_triplets_good_z is different" << endl;
+
+    sum_pentlets_bad(a, b);
+    sum_pentlets_bad_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_pentlets_bad_z is different" << endl;
+
+    sum_pentlets_good(a, b);
+    sum_pentlets_good_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_pentlets_good_z is different" << endl;
 
     sum_neighbors(a, b);
     sum_neighbors_z(a, c);
@@ -334,8 +402,11 @@ int main(int argc, char **argv) {
     run_test<morton_array<double>>(sum_triplets_bad<morton_array<double>>, "triplets_bad", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_bad_z, "triplets_bad_z", sizes, iterations);
     run_test<morton_array<double>>(sum_triplets_good<morton_array<double>>, "triplets_good", sizes, iterations);
+    run_test<morton_array<double>>(sum_triplets_good_z, "triplets_good_z", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_bad<morton_array<double>>, "pentlets_bad", sizes, iterations);
+    run_test<morton_array<double>>(sum_pentlets_bad_z, "pentlets_bad_z", sizes, iterations);
     run_test<morton_array<double>>(sum_pentlets_good<morton_array<double>>, "pentlets_good", sizes, iterations);
+    run_test<morton_array<double>>(sum_pentlets_good_z, "pentlets_good_z", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors<morton_array<double>>, "sum_neighbors", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors_z, "sum_neighbors_z", sizes, iterations);
 
