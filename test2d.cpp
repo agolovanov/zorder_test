@@ -15,6 +15,7 @@
 #include <cmath>
 #include <omp.h>
 #include "mpi.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -67,6 +68,8 @@ void run_test(std::function<void(T&, T&)> func, const std::string & testname, in
         times[i] = chrono::duration_cast<chrono::nanoseconds>(end - begin).count() / 1e6;
     }
     if (mpi_rank == 0) {
+        sort(times.begin(), times.end());
+        times.pop_back();
         double avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
         double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
         double standard_deviation = sqrt(avg_sq - avg * avg);
@@ -393,9 +396,24 @@ int main(int argc, char **argv) {
 
     re.seed(chrono::system_clock::now().time_since_epoch().count());
 
-    const int iterations = 5;
+    const int iterations = 6;
 
     vector<int> sizes = {512, 1024, 2048, 4096, 8192};
+
+    if (argc > 1) {
+        sizes.erase(sizes.begin(), sizes.end());
+        for (int i = 1; i < argc; i++) {
+            sizes.push_back(atoi(argv[i]));
+        }
+    }
+
+    if (mpi_rank == 0) {
+        cout << "Sizes:";
+        for (auto size : sizes) {
+            cout << " " << size;
+        }
+        cout << endl;
+    }
 
     if (mpi_rank == 0) {
         for (auto size : sizes) {
