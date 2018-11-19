@@ -70,41 +70,41 @@ public:
 template <typename T>
 class morton_array {
 private:
-    const int n;
-    int pow;
+    const unsigned int n;
+    unsigned int pow;
     std::unique_ptr<T[]> data;
-    std::unique_ptr<int[]> cache;
-    int x_mask;
-    int y_mask;
+    std::unique_ptr<unsigned int[]> cache;
+    unsigned int x_mask;
+    unsigned int y_mask;
 
     int encode_calculate(int x) {
         int res = 0;
-        for (int i = 0; i < pow; i++) {
+        for (unsigned int i = 0; i < pow; i++) {
             res += (x & (1 << i)) << i;
         }
         return res;
     }
 public:
-    morton_array(int n) : n(n) {
+    morton_array(unsigned int n) : n(n) {
         pow = 0;
-        while ((1 << pow) < n) {
+        while ((1u << pow) < n) {
             pow++;
         }
-        if ((1 << pow) != n) {
+        if ((1u << pow) != n) {
             throw std::invalid_argument("The size must be a power of two");
         }
         data = std::unique_ptr<T[]>(new T[n * n]);
 
-        cache = std::unique_ptr<int[]>(new int[n]);
+        cache = std::unique_ptr<unsigned int[]>(new unsigned int[n]);
 
-        for (int i = 0; i < n; i++) {
+        for (unsigned int i = 0; i < n; i++) {
             cache[i] = encode_calculate(i);
         }
         x_mask = cache[n-1];
         y_mask = cache[n-1] << 1;
     }
 
-    inline T & operator() (int i, int j) const {
+    inline T & operator() (unsigned int i, unsigned int j) const {
         return data[(cache[i] << 1) | cache[j]];
     }
 
@@ -116,9 +116,9 @@ public:
         return cache[i];
     }
 
-    int get_n() const { return n; }
+    unsigned int get_n() const { return n; }
 
-    int get_size() const { return n * n; }
+    unsigned int get_size() const { return n * n; }
 
     morton_array<T> & operator=(morton_array<T> & other) {
         memcpy(data.get(), other.data.get(), n * n * sizeof(T));
@@ -126,24 +126,24 @@ public:
         return *this;
     }
 
-    inline bool is_xmin(int i) const { return ((i & x_mask) == 0); }
-    inline bool is_xmax(int i) const { return ((i & x_mask) == x_mask); }
-    inline bool is_ymin(int i) const { return ((i & y_mask) == 0); }
-    inline bool is_ymax(int i) const { return ((i & y_mask) == y_mask); }
+    inline bool is_xmin(unsigned int i) const { return ((i & x_mask) == 0); }
+    inline bool is_xmax(unsigned int i) const { return ((i & x_mask) == x_mask); }
+    inline bool is_ymin(unsigned int i) const { return ((i & y_mask) == 0); }
+    inline bool is_ymax(unsigned int i) const { return ((i & y_mask) == y_mask); }
 
-    inline int get_x_prev(int i) const {
+    inline unsigned int get_x_prev(unsigned int i) const {
         return (i & y_mask) | (((i & x_mask) - 1) & x_mask);
     }
 
-    inline int get_x_next(int i) const {
+    inline unsigned int get_x_next(unsigned int i) const {
         return (i & y_mask) | (((i | y_mask) + 1) & x_mask);
     }
 
-    inline int get_y_prev(int i) const {
+    inline unsigned int get_y_prev(unsigned int i) const {
         return (i & x_mask) | (((i & y_mask) - 1) & y_mask);
     }
 
-    inline int get_y_next(int i) const {
+    inline unsigned int get_y_next(unsigned int i) const {
         return (i & x_mask) | (((i | x_mask) + 1) & y_mask);
     }
 };

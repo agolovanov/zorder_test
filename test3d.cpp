@@ -356,6 +356,56 @@ void sum_neighbors_z(morton_array<double> & a, morton_array<double> & b) {
     }
 }
 
+template <typename T>
+void sum_neighbors_periodic(T & a, T & b) {
+    int n = a.get_n();
+    #pragma omp parallel for
+    for (int i = 0; i < n-1; i++) {
+        for (int j = 0; j < n-1; j++) {
+            for (int k = 0; k < n-1; k++) {
+                b(i, j, k) = a(i, j, k) + a(i+1, j, k) + a(i, j+1, k) + a(i+1, j+1, k) + a(i, j, k+1) + a(i+1, j, k+1)
+                           + a(i, j+1, k+1) + a(i+1, j+1, k+1);
+            }
+            b(i, j, n-1) = a(i, j, n-1) + a(i+1, j, n-1) + a(i, j+1, n - 1) + a(i+1, j+1, n-1) + a(i, j, 0)
+                    + a(i+1, j, 0) + a(i, j+1, 0) + a(i+1, j+1, 0);
+        }
+        for (int k = 0; k < n-1; k++) {
+            b(i, n-1, k) = a(i, n-1, k) + a(i+1, n-1, k) + a(i, n-1, k+1) + a(i+1, n-1, k+1) + a(i, 0, k)
+                    + a(i+1, 0, k) + a(i, 0, k+1) + a(i+1, 0, k+1);
+        }
+        b(i, n-1, n-1) = a(i, n-1, n-1) + a(i+1, n-1, n-1) + a(i, 0, n-1) + a(i+1, 0, n-1) + a(i, n-1, 0)
+                + a(i+1, n-1, 0) + a(i, 0, 0) + a(i+1, 0, 0);
+    }
+    for (int j = 0; j < n-1; j++) {
+        for (int k = 0; k < n-1; k++) {
+            b(n-1, j, k) = a(n-1, j, k) + a(n-1, j+1, k) + a(n-1, j, k+1) + a(n-1, j+1, k+1) + a(0, j, k)
+                    + a(0, j+1, k) + a(0, j, k+1) + a(0, j+1, k+1);;
+        }
+        b(n-1, j, n-1) = a(n-1, j, n-1) + a(n-1, j+1, n-1) + a(0, j, n-1) + a(0, j+1, n-1) + a(n-1, j, 0)
+                + a(n-1, j+1, 0) + a(0, j, 0) + a(0, j+1, 0);
+    }
+    for (int k = 0; k < n-1; k++) {
+        b(n-1, n-1, k) = a(n-1, n-1, k) + a(n-1, n-1, k+1) + a(0, n-1, k) + a(0, n-1, k+1) + a(n-1, 0, k)
+                + a(n-1, 0, k+1) + a(0, 0, k) + a(0, 0, k+1);
+    }
+    b(n-1, n-1, n-1) = a(n-1, n-1, n-1) + a(n-1, n-1, 0) + a(n-1, 0, n-1) + a(n-1, 0, 0) + a(0, n-1, n-1)
+            + a(0, n-1, 0) + a(0, 0, n-1) + a(0, 0, 0);
+}
+
+void sum_neighbors_periodic_z(morton_array<double> & a, morton_array<double> & b) {
+    int n = a.get_size();
+    for (int i = 0; i < n; i++) {
+        unsigned int x_next = a.get_x_next(i);
+        unsigned int y_next = a.get_y_next(i);
+        unsigned int z_next = a.get_z_next(i);
+        unsigned int xy_next = a.get_x_next(y_next);
+        unsigned int xz_next = a.get_x_next(z_next);
+        unsigned int yz_next = a.get_y_next(z_next);
+        unsigned int xyz_next = a.get_z_next(xy_next);
+        b[i] = a[i] + a[x_next] + a[y_next] + a[z_next] + a[xy_next] + a[xz_next] + a[yz_next] + a[xyz_next];
+    }
+}
+
 template<typename T>
 void print_array(T& a) {
     int n = a.get_n();
@@ -449,6 +499,10 @@ void run_checks(int size) {
     sum_neighbors(a, b);
     sum_neighbors_z(a, c);
     if (!is_equal(b, c)) cout << "sum_neighbors_z is different" << endl;
+
+    sum_neighbors_periodic(a, b);
+    sum_neighbors_periodic_z(a, c);
+    if (!is_equal(b, c)) cout << "sum_neighbors_periodic_z is different" << endl;
 }
 
 int main(int argc, char **argv) {
@@ -501,6 +555,8 @@ int main(int argc, char **argv) {
     run_test<morton_array<double>>(sum_pentlets_good_z, "pentlets_good_z", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors<morton_array<double>>, "sum_neighbors", sizes, iterations);
     run_test<morton_array<double>>(sum_neighbors_z, "sum_neighbors_z", sizes, iterations);
+    run_test<morton_array<double>>(sum_neighbors_periodic<morton_array<double>>, "sum_neighbors_p", sizes, iterations);
+    run_test<morton_array<double>>(sum_neighbors_periodic_z, "sum_neighbor_pz", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Simple array:" << endl;
@@ -514,6 +570,7 @@ int main(int argc, char **argv) {
     run_test<simple_array<double>>(sum_pentlets_bad<simple_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<simple_array<double>>(sum_pentlets_good<simple_array<double>>, "pentlets_good", sizes, iterations);
     run_test<simple_array<double>>(sum_neighbors<simple_array<double>>, "sum_neighbors", sizes, iterations);
+    run_test<simple_array<double>>(sum_neighbors_periodic<simple_array<double>>, "sum_neighbors_p", sizes, iterations);
 
     if (mpi_rank == 0) {
         cout << "Cached array:" << endl;
@@ -527,6 +584,7 @@ int main(int argc, char **argv) {
     run_test<cached_array<double>>(sum_pentlets_bad<cached_array<double>>, "pentlets_bad", sizes, iterations);
     run_test<cached_array<double>>(sum_pentlets_good<cached_array<double>>, "pentlets_good", sizes, iterations);
     run_test<cached_array<double>>(sum_neighbors<cached_array<double>>, "sum_neighbors", sizes, iterations);
+    run_test<cached_array<double>>(sum_neighbors_periodic<cached_array<double>>, "sum_neighbors_p", sizes, iterations);
 
     MPI_Finalize();
     return 0;
