@@ -134,12 +134,12 @@ void sum_triplets_bad(T & a, T & b) {
 void sum_triplets_bad_z(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_size();
     for (int i = 0; i < n; i++) {
-        if (a.is_zmin(i)) {
-            b[i] = a[i] + a[a.get_z_next(i)];
-        } else if (a.is_zmax(i)) {
-            b[i] = a[i] + a[a.get_z_prev(i)];
+        if (a.is_xmin(i)) {
+            b[i] = a[i] + a[a.get_x_next(i)];
+        } else if (a.is_xmax(i)) {
+            b[i] = a[i] + a[a.get_x_prev(i)];
         } else {
-            b[i] = a[i] + a[a.get_z_next(i)] + a[a.get_z_prev(i)];
+            b[i] = a[i] + a[a.get_x_next(i)] + a[a.get_x_prev(i)];
         }
     }
 }
@@ -162,12 +162,12 @@ void sum_triplets_good(T & a, T & b) {
 void sum_triplets_good_z(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_size();
     for (int i = 0; i < n; i++) {
-        if (a.is_xmin(i)) {
-            b[i] = a[i] + a[a.get_x_next(i)];
-        } else if (a.is_xmax(i)) {
-            b[i] = a[i] + a[a.get_x_prev(i)];
+        if (a.is_zmin(i)) {
+            b[i] = a[i] + a[a.get_z_next(i)];
+        } else if (a.is_zmax(i)) {
+            b[i] = a[i] + a[a.get_z_prev(i)];
         } else {
-            b[i] = a[i] + a[a.get_x_next(i)] + a[a.get_x_prev(i)];
+            b[i] = a[i] + a[a.get_z_next(i)] + a[a.get_z_prev(i)];
         }
     }
 }
@@ -208,26 +208,26 @@ void sum_pentlets_bad(T & a, T & b) {
 void sum_pentlets_bad_z(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_size();
     for (int i = 0; i < n; i++) {
-        if (a.is_zmin(i)) {
-            int i1 = a.get_z_next(i);
-            int i2 = a.get_z_next(i1);
+        if (a.is_xmin(i)) {
+            int i1 = a.get_x_next(i);
+            int i2 = a.get_x_next(i1);
             b[i] = a[i] + a[i1] + a[i2];
-        } else if (a.is_zmax(i)) {
-            int i1 = a.get_z_prev(i);
-            int i2 = a.get_z_prev(i1);
+        } else if (a.is_xmax(i)) {
+            int i1 = a.get_x_prev(i);
+            int i2 = a.get_x_prev(i1);
             b[i] = a[i] + a[i1] + a[i2];
         } else {
-            int i1_prev = a.get_z_prev(i);
-            int i1_next = a.get_z_next(i);
-            if (a.is_zmin(i1_prev)) {
-                int i2_next = a.get_z_next(i1_next);
+            int i1_prev = a.get_x_prev(i);
+            int i1_next = a.get_x_next(i);
+            if (a.is_xmin(i1_prev)) {
+                int i2_next = a.get_x_next(i1_next);
                 b[i] = a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
-            } else if (a.is_zmax(i1_next)) {
-                int i2_prev = a.get_z_prev(i1_prev);
+            } else if (a.is_xmax(i1_next)) {
+                int i2_prev = a.get_x_prev(i1_prev);
                 b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next];
             } else {
-                int i2_next = a.get_z_next(i1_next);
-                int i2_prev = a.get_z_prev(i1_prev);
+                int i2_next = a.get_x_next(i1_next);
+                int i2_prev = a.get_x_prev(i1_prev);
                 b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
             }
         }
@@ -254,26 +254,26 @@ void sum_pentlets_good(T & a, T & b) {
 void sum_pentlets_good_z(morton_array<double> & a, morton_array<double> & b) {
     int n = a.get_size();
     for (int i = 0; i < n; i++) {
-        if (a.is_xmin(i)) {
-            int i1 = a.get_x_next(i);
-            int i2 = a.get_x_next(i1);
+        if (a.is_zmin(i)) {
+            int i1 = a.get_z_next(i);
+            int i2 = a.get_z_next(i1);
             b[i] = a[i] + a[i1] + a[i2];
-        } else if (a.is_xmax(i)) {
-            int i1 = a.get_x_prev(i);
-            int i2 = a.get_x_prev(i1);
+        } else if (a.is_zmax(i)) {
+            int i1 = a.get_z_prev(i);
+            int i2 = a.get_z_prev(i1);
             b[i] = a[i] + a[i1] + a[i2];
         } else {
-            int i1_prev = a.get_x_prev(i);
-            int i1_next = a.get_x_next(i);
-            if (a.is_xmin(i1_prev)) {
-                int i2_next = a.get_x_next(i1_next);
+            int i1_prev = a.get_z_prev(i);
+            int i1_next = a.get_z_next(i);
+            if (a.is_zmin(i1_prev)) {
+                int i2_next = a.get_z_next(i1_next);
                 b[i] = a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
-            } else if (a.is_xmax(i1_next)) {
-                int i2_prev = a.get_x_prev(i1_prev);
+            } else if (a.is_zmax(i1_next)) {
+                int i2_prev = a.get_z_prev(i1_prev);
                 b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next];
             } else {
-                int i2_next = a.get_x_next(i1_next);
-                int i2_prev = a.get_x_prev(i1_prev);
+                int i2_next = a.get_z_next(i1_next);
+                int i2_prev = a.get_z_prev(i1_prev);
                 b[i] = a[i2_prev] + a[i1_prev] + a[i] + a[i1_next] + a[i2_next];
             }
         }

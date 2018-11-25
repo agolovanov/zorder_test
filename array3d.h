@@ -84,8 +84,8 @@ private:
     unsigned int y_mask;
     unsigned int z_mask;
     unsigned int xy_mask;
-    unsigned int yz_mask;
     unsigned int xz_mask;
+    unsigned int yz_mask;
 
     int encode_calculate(unsigned int x) {
         unsigned int res = 0;
@@ -110,9 +110,11 @@ public:
         for (unsigned int i = 0; i < n; i++) {
             cache[i] = encode_calculate(i);
         }
-        x_mask = cache[n-1];
+
+        x_mask = cache[n-1] << 2;
         y_mask = cache[n-1] << 1;
-        z_mask = cache[n-1] << 2;
+        z_mask = cache[n-1];
+
         xy_mask = x_mask | y_mask;
         xz_mask = x_mask | z_mask;
         yz_mask = y_mask | z_mask;
