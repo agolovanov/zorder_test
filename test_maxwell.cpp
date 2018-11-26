@@ -30,6 +30,10 @@ struct vector3d {
     double x = 0, y = 0, z = 0;
 };
 
+struct vector6d {
+    double ex = 0, ey = 0, ez = 0, bx = 0, by = 0, bz = 0;
+};
+
 template <typename T>
 void randomize_vector(T & a) {
     int n = a.get_n();
@@ -39,6 +43,23 @@ void randomize_vector(T & a) {
                 a(i, j, k).x = gen();
                 a(i, j, k).y = gen();
                 a(i, j, k).z = gen();
+            }
+        }
+    }
+}
+
+template <typename T>
+void randomize_vector6d(T & a) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++){
+                a(i, j, k).ex = gen();
+                a(i, j, k).ey = gen();
+                a(i, j, k).ez = gen();
+                a(i, j, k).bx = gen();
+                a(i, j, k).by = gen();
+                a(i, j, k).bz = gen();
             }
         }
     }
@@ -121,6 +142,82 @@ void advance_b_vector_z(const morton_array<vector3d> & e, morton_array<vector3d>
 }
 
 template <typename T>
+void advance_b_vector6d(const T & v) {
+    const int n = v.get_n();
+
+    for(int i=1;i<n-1;i++) {
+        for(int j=1;j<n-1;j++) {
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).bx += 0.5*(-dtdy*(v(i,j+1,k).ez-v(i,j,k).ez) + dtdz*(v(i,j,k+1).ey-v(i,j,k).ey));
+                v(i,j,k).by += 0.5*( dtdx*(v(i+1,j,k).ez-v(i,j,k).ez) - dtdz*(v(i,j,k+1).ex-v(i,j,k).ex));
+                v(i,j,k).bz += 0.5*( dtdy*(v(i,j+1,k).ex-v(i,j,k).ex) - dtdx*(v(i+1,j,k).ey-v(i,j,k).ey));
+            }
+        }
+    }
+    {int i=0;
+        for(int j=1;j<n-1;j++) {
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).by += 0.5*( dtdx*(v(i+1,j,k).ez-v(i,j,k).ez) - dtdz*(v(i,j,k+1).ex-v(i,j,k).ex));
+                v(i,j,k).bz += 0.5*( dtdy*(v(i,j+1,k).ex-v(i,j,k).ex) - dtdx*(v(i+1,j,k).ey-v(i,j,k).ey));
+            }
+        }
+    }
+    for(int i=1;i<n-1;i++) {
+        {int j=0;
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).bx += 0.5*(-dtdy*(v(i,j+1,k).ez-v(i,j,k).ez) + dtdz*(v(i,j,k+1).ey-v(i,j,k).ey));
+                v(i,j,k).bz += 0.5*( dtdy*(v(i,j+1,k).ex-v(i,j,k).ex) - dtdx*(v(i+1,j,k).ey-v(i,j,k).ey));
+            }
+        }
+    }
+    for(int i=1;i<n-1;i++) {
+        for(int j=1;j<n-1;j++) {
+            {int k=0;
+                v(i,j,k).bx += 0.5*(-dtdy*(v(i,j+1,k).ez-v(i,j,k).ez) + dtdz*(v(i,j,k+1).ey-v(i,j,k).ey));
+                v(i,j,k).by += 0.5*( dtdx*(v(i+1,j,k).ez-v(i,j,k).ez) - dtdz*(v(i,j,k+1).ex-v(i,j,k).ex));
+            }
+        }
+    }
+}
+
+void advance_b_vector6d_z(const morton_array<vector6d> & v) {
+    const unsigned int n = v.get_size();
+
+    for (unsigned int curr = 0; curr < n; curr++) {
+        if (v.is_xmax(curr) || v.is_ymax(curr) || v.is_zmax(curr)) {
+            continue;
+        }
+
+        auto x_next = v.get_x_next(curr);
+        auto y_next = v.get_y_next(curr);
+        auto z_next = v.get_z_next(curr);
+
+        if (v.is_xmin(curr)) {
+            if (v.is_ymin(curr) || v.is_zmin(curr)) {
+                continue;
+            } else {
+                v[curr].by += 0.5*( dtdx*(v[x_next].ez-v[curr].ez) - dtdz*(v[z_next].ex-v[curr].ex));
+                v[curr].bz += 0.5*( dtdy*(v[y_next].ex-v[curr].ex) - dtdx*(v[x_next].ey-v[curr].ey));
+            }
+        } else if (v.is_ymin(curr)) {
+            if (v.is_zmin(curr)) {
+                continue;
+            } else {
+                v[curr].bx += 0.5*(-dtdy*(v[y_next].ez-v[curr].ez) + dtdz*(v[z_next].ey-v[curr].ey));
+                v[curr].bz += 0.5*( dtdy*(v[y_next].ex-v[curr].ex) - dtdx*(v[x_next].ey-v[curr].ey));
+            }
+        } else if (v.is_zmin(curr)) {
+            v[curr].bx += 0.5*(-dtdy*(v[y_next].ez-v[curr].ez) + dtdz*(v[z_next].ey-v[curr].ey));
+            v[curr].by += 0.5*( dtdx*(v[x_next].ez-v[curr].ez) - dtdz*(v[z_next].ex-v[curr].ex));
+        } else {
+            v[curr].bx += 0.5*(-dtdy*(v[y_next].ez-v[curr].ez) + dtdz*(v[z_next].ey-v[curr].ey));
+            v[curr].by += 0.5*( dtdx*(v[x_next].ez-v[curr].ez) - dtdz*(v[z_next].ex-v[curr].ex));
+            v[curr].bz += 0.5*( dtdy*(v[y_next].ex-v[curr].ex) - dtdx*(v[x_next].ey-v[curr].ey));
+        }
+    }
+}
+
+template <typename T>
 void advance_e_vector(T & e, const T & b) {
     const int n = e.get_n();
 
@@ -191,6 +288,75 @@ void advance_e_vector_z(morton_array<vector3d> & e, const morton_array<vector3d>
 }
 
 template <typename T>
+void advance_e_vector6d(T & v) {
+    const int n = v.get_n();
+
+    for(int i=1;i<n-1;i++) {
+        for(int j=1;j<n-1;j++) {
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).ex +=  dtdy*(v(i,j,k).bz-v(i,j-1,k).bz) - dtdz*(v(i,j,k).by-v(i,j,k-1).by);
+                v(i,j,k).ey += -dtdx*(v(i,j,k).bz-v(i-1,j,k).bz) + dtdz*(v(i,j,k).bx-v(i,j,k-1).bx);
+                v(i,j,k).ez +=  dtdx*(v(i,j,k).by-v(i-1,j,k).by) - dtdy*(v(i,j,k).bx-v(i,j-1,k).bx);
+            }
+        }
+    }
+    {int i=0;
+        for(int j=1;j<n-1;j++) {
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).ex +=  dtdy*(v(i,j,k).bz-v(i,j-1,k).bz) - dtdz*(v(i,j,k).by-v(i,j,k-1).by);
+            }
+        }
+    }
+    for(int i=1;i<n-1;i++) {
+        {int j=0;
+            for(int k=1;k<n-1;k++) {
+                v(i,j,k).ey += -dtdx*(v(i,j,k).bz-v(i-1,j,k).bz) + dtdz*(v(i,j,k).bx-v(i,j,k-1).bx);
+            }
+        }
+    }
+    for(int i=1;i<n-1;i++) {
+        for(int j=1;j<n-1;j++) {
+            int k=0;
+            v(i,j,k).ez +=  dtdx*(v(i,j,k).by-v(i-1,j,k).by) - dtdy*(v(i,j,k).bx-v(i,j-1,k).bx);
+        }
+    }
+}
+
+void advance_e_vector6d_z(morton_array<vector6d> & v) {
+    const unsigned int n = v.get_size();
+
+    for (unsigned int curr = 0; curr < n; curr++) {
+        if (v.is_xmax(curr) || v.is_ymax(curr) || v.is_zmax(curr)) {
+            continue;
+        }
+
+        auto x_prev = v.get_x_prev(curr);
+        auto y_prev = v.get_y_prev(curr);
+        auto z_prev = v.get_z_prev(curr);
+
+        if (v.is_xmin(curr)) {
+            if (v.is_ymin(curr) || v.is_zmin(curr)) {
+                continue;
+            } else {
+                v[curr].ex +=  dtdy*(v[curr].bz-v[y_prev].bz) - dtdz*(v[curr].by-v[z_prev].by);
+            }
+        } else if (v.is_ymin(curr)) {
+            if (v.is_zmin(curr)) {
+                continue;
+            } else {
+                v[curr].ey += -dtdx*(v[curr].bz-v[x_prev].bz) + dtdz*(v[curr].bx-v[z_prev].bx);
+            }
+        } else if (v.is_zmin(curr)) {
+            v[curr].ez +=  dtdx*(v[curr].by-v[x_prev].by) - dtdy*(v[curr].bx-v[y_prev].bx);
+        } else {
+            v[curr].ex +=  dtdy*(v[curr].bz-v[y_prev].bz) - dtdz*(v[curr].by-v[z_prev].by);
+            v[curr].ey += -dtdx*(v[curr].bz-v[x_prev].bz) + dtdz*(v[curr].bx-v[z_prev].bx);
+            v[curr].ez +=  dtdx*(v[curr].by-v[x_prev].by) - dtdy*(v[curr].bx-v[y_prev].bx);
+        }
+    }
+}
+
+template <typename T>
 void advance_vector(T & e, T & b) {
     advance_b_vector(e, b);
     advance_e_vector(e, b);
@@ -201,6 +367,19 @@ void advance_vector_z(morton_array<vector3d> & e, morton_array<vector3d> & b) {
     advance_b_vector_z(e, b);
     advance_e_vector_z(e, b);
     advance_b_vector_z(e, b);
+}
+
+template <typename T>
+void advance_vector6d(T & v) {
+    advance_b_vector6d(v);
+    advance_e_vector6d(v);
+    advance_b_vector6d(v);
+}
+
+void advance_vector6d_z(morton_array<vector6d> & v) {
+    advance_b_vector6d_z(v);
+    advance_e_vector6d_z(v);
+    advance_b_vector6d_z(v);
 }
 
 template <typename T>
@@ -231,6 +410,32 @@ void run_test_vector(std::function<void(T&, T&)> func, const std::string & testn
     }
 }
 
+template <typename T>
+void run_test_vector6d(std::function<void(T&)> func, const std::string & testname, int size, int iterations=10) {
+    T a(size);
+    vector<double> times(iterations);
+    for (int i = 0; i < iterations; i++) {
+        randomize_vector6d(a);
+        MPI_Barrier(MPI_COMM_WORLD);
+        chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+        func(a);
+        MPI_Barrier(MPI_COMM_WORLD);
+        chrono::steady_clock::time_point end = chrono::steady_clock::now();
+        times[i] = chrono::duration_cast<chrono::nanoseconds>(end - begin).count() / 1e6;
+    }
+    if (mpi_rank == 0) {
+        sort(times.begin(), times.end());
+        times.pop_back();
+        double avg = accumulate(times.begin(), times.end(), 0.0) / times.size();
+        double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
+        double standard_deviation = sqrt(avg_sq - avg * avg);
+        double throughput = (static_cast<double>(mpi_size) * size * size * size * sizeof(vector6d)) / GB * 1e3 / avg; // Gb / s
+        cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
+                << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput
+                << endl;
+    }
+}
+
 template <typename T, typename V>
 bool is_equal_vector(T & a, V & b) {
     int n = a.get_n();
@@ -246,43 +451,97 @@ bool is_equal_vector(T & a, V & b) {
     return true;
 }
 
+template <typename T, typename V>
+bool is_equal_vector6d(T & a, V & b) {
+    int n = a.get_n();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++) {
+                if (std::fabs(b(i, j, k).ex - a(i, j, k).ex) > 1e-6) return false;
+                if (std::fabs(b(i, j, k).ey - a(i, j, k).ey) > 1e-6) return false;
+                if (std::fabs(b(i, j, k).ez - a(i, j, k).ez) > 1e-6) return false;
+                if (std::fabs(b(i, j, k).bx - a(i, j, k).bx) > 1e-6) return false;
+                if (std::fabs(b(i, j, k).by - a(i, j, k).by) > 1e-6) return false;
+                if (std::fabs(b(i, j, k).bz - a(i, j, k).bz) > 1e-6) return false;
+            }
+        }
+    }
+    return true;
+}
+
 void run_checks(int size) {
     cout << "Checking size " << size << "..." << endl;
 
-    morton_array<vector3d> e1(size);
-    morton_array<vector3d> e2(size);
-    morton_array<vector3d> b1(size);
-    morton_array<vector3d> b2(size);
+    {
+        // vector3d checks
 
-    randomize_vector(e1);
-    e2 = e1;
-    randomize_vector(b1);
-    b2 = b1;
+        morton_array<vector3d> e1(size);
+        morton_array<vector3d> e2(size);
+        morton_array<vector3d> b1(size);
+        morton_array<vector3d> b2(size);
 
-    advance_b_vector(e1, b1);
-    advance_b_vector_z(e2, b2);
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
 
-    if (!is_equal_vector(b1, b2)) cout << "advance_b_vector_z is different" << endl;
+        advance_b_vector(e1, b1);
+        advance_b_vector_z(e2, b2);
 
-    randomize_vector(e1);
-    e2 = e1;
-    randomize_vector(b1);
-    b2 = b1;
+        if (!is_equal_vector(b1, b2)) cout << "advance_b_vector_z is different" << endl;
 
-    advance_e_vector(e1, b1);
-    advance_e_vector_z(e2, b2);
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
 
-    if (!is_equal_vector(e1, e2)) cout << "advance_e_vector_z is different" << endl;
+        advance_e_vector(e1, b1);
+        advance_e_vector_z(e2, b2);
 
-    randomize_vector(e1);
-    e2 = e1;
-    randomize_vector(b1);
-    b2 = b1;
+        if (!is_equal_vector(e1, e2)) cout << "advance_e_vector_z is different" << endl;
 
-    advance_vector(e1, b1);
-    advance_vector_z(e2, b2);
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
 
-    if (!is_equal_vector(e1, e2) || !is_equal_vector(b1, b2)) cout << "advance_vector_z is different" << endl;
+        advance_vector(e1, b1);
+        advance_vector_z(e2, b2);
+
+        if (!is_equal_vector(e1, e2) || !is_equal_vector(b1, b2)) cout << "advance_vector_z is different" << endl;
+    }
+
+    {
+        // vector6d checks
+
+        morton_array<vector6d> v1(size);
+        morton_array<vector6d> v2(size);
+
+        randomize_vector6d(v1);
+        v2 = v1;
+
+        advance_b_vector6d(v1);
+        advance_b_vector6d_z(v2);
+
+        if (!is_equal_vector6d(v1, v2)) cout << "advance_b_vector6d_z is different" << endl;
+
+        randomize_vector6d(v1);
+        v2 = v1;
+
+        advance_e_vector6d(v1);
+        advance_e_vector6d_z(v2);
+
+        if (!is_equal_vector6d(v1, v2)) cout << "advance_e_vector6d_z is different" << endl;
+
+        randomize_vector6d(v1);
+        v2 = v1;
+
+        advance_vector6d(v1);
+        advance_vector6d_z(v2);
+
+        if (!is_equal_vector6d(v1, v2)) cout << "advance_vector6d_z is different" << endl;
+    }
+
 }
 
 template <typename T>
@@ -359,6 +618,21 @@ int main(int argc, char **argv) {
         run_test_vector<cached_array<vector3d>>(advance_vector<cached_array<vector3d>>, "c_vector", size, iterations);
         run_test_vector<morton_array<vector3d>>(advance_vector<morton_array<vector3d>>, "m_vector", size, iterations);
         run_test_vector<morton_array<vector3d>>(advance_vector_z, "m_vector_z", size, iterations);
+
+        run_test_vector6d<simple_array<vector6d>>(advance_b_vector6d<simple_array<vector6d>>, "s_vector6(b)", size, iterations);
+        run_test_vector6d<cached_array<vector6d>>(advance_b_vector6d<cached_array<vector6d>>, "c_vector6(b)", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_b_vector6d<morton_array<vector6d>>, "m_vector6(b)", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_b_vector6d_z, "m_vector6_z(b)", size, iterations);
+
+        run_test_vector6d<simple_array<vector6d>>(advance_e_vector6d<simple_array<vector6d>>, "s_vector6(e)", size, iterations);
+        run_test_vector6d<cached_array<vector6d>>(advance_e_vector6d<cached_array<vector6d>>, "c_vector6(e)", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_e_vector6d<morton_array<vector6d>>, "m_vector6(e)", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_e_vector6d_z, "m_vector6_z(e)", size, iterations);
+
+        run_test_vector6d<simple_array<vector6d>>(advance_vector6d<simple_array<vector6d>>, "s_vector6", size, iterations);
+        run_test_vector6d<cached_array<vector6d>>(advance_vector6d<cached_array<vector6d>>, "c_vector6", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_vector6d<morton_array<vector6d>>, "m_vector6", size, iterations);
+        run_test_vector6d<morton_array<vector6d>>(advance_vector6d_z, "m_vector6_z", size, iterations);
     }
 
     MPI_Finalize();
