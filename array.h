@@ -10,7 +10,6 @@
 
 #include <memory>
 #include <cstring>
-#include "morton.h"
 #include <cassert>
 #include <stdexcept>
 
