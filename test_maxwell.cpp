@@ -231,6 +231,72 @@ void advance_b_vector_z(const morton_array<vector3d> & e, morton_array<vector3d>
 }
 
 template <typename T>
+void advance_b_vector_periodic(const T & e, T & b) {
+    const int n = e.get_n();
+
+    for(int i=0;i<n-1;i++) {
+        for(int j=0;j<n-1;j++) {
+            for(int k=0;k<n-1;k++) {
+                b(i,j,k).x += 0.5*(-dtdy*(e(i,j+1,k).z-e(i,j,k).z) + dtdz*(e(i,j,k+1).y-e(i,j,k).y));
+                b(i,j,k).y += 0.5*( dtdx*(e(i+1,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,k+1).x-e(i,j,k).x));
+                b(i,j,k).z += 0.5*( dtdy*(e(i,j+1,k).x-e(i,j,k).x) - dtdx*(e(i+1,j,k).y-e(i,j,k).y));
+            }
+            const int k = n-1;
+            b(i,j,k).x += 0.5*(-dtdy*(e(i,j+1,k).z-e(i,j,k).z) + dtdz*(e(i,j,0).y-e(i,j,k).y));
+            b(i,j,k).y += 0.5*( dtdx*(e(i+1,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,0).x-e(i,j,k).x));
+            b(i,j,k).z += 0.5*( dtdy*(e(i,j+1,k).x-e(i,j,k).x) - dtdx*(e(i+1,j,k).y-e(i,j,k).y));
+        }
+        const int j = n-1;
+        for(int k=0;k<n-1;k++) {
+            b(i,j,k).x += 0.5*(-dtdy*(e(i,0,k).z-e(i,j,k).z) + dtdz*(e(i,j,k+1).y-e(i,j,k).y));
+            b(i,j,k).y += 0.5*( dtdx*(e(i+1,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,k+1).x-e(i,j,k).x));
+            b(i,j,k).z += 0.5*( dtdy*(e(i,0,k).x-e(i,j,k).x) - dtdx*(e(i+1,j,k).y-e(i,j,k).y));
+        }
+        const int k = n-1;
+        b(i,j,k).x += 0.5*(-dtdy*(e(i,0,k).z-e(i,j,k).z) + dtdz*(e(i,j,0).y-e(i,j,k).y));
+        b(i,j,k).y += 0.5*( dtdx*(e(i+1,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,0).x-e(i,j,k).x));
+        b(i,j,k).z += 0.5*( dtdy*(e(i,0,k).x-e(i,j,k).x) - dtdx*(e(i+1,j,k).y-e(i,j,k).y));
+    }
+    const int i = n-1;
+    for(int j=0;j<n-1;j++) {
+        for(int k=0;k<n-1;k++) {
+            b(i,j,k).x += 0.5*(-dtdy*(e(i,j+1,k).z-e(i,j,k).z) + dtdz*(e(i,j,k+1).y-e(i,j,k).y));
+            b(i,j,k).y += 0.5*( dtdx*(e(0,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,k+1).x-e(i,j,k).x));
+            b(i,j,k).z += 0.5*( dtdy*(e(i,j+1,k).x-e(i,j,k).x) - dtdx*(e(0,j,k).y-e(i,j,k).y));
+        }
+        const int k = n-1;
+        b(i,j,k).x += 0.5*(-dtdy*(e(i,j+1,k).z-e(i,j,k).z) + dtdz*(e(i,j,0).y-e(i,j,k).y));
+        b(i,j,k).y += 0.5*( dtdx*(e(0,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,0).x-e(i,j,k).x));
+        b(i,j,k).z += 0.5*( dtdy*(e(i,j+1,k).x-e(i,j,k).x) - dtdx*(e(0,j,k).y-e(i,j,k).y));
+    }
+    const int j = n-1;
+    for(int k=0;k<n-1;k++) {
+        b(i,j,k).x += 0.5*(-dtdy*(e(i,0,k).z-e(i,j,k).z) + dtdz*(e(i,j,k+1).y-e(i,j,k).y));
+        b(i,j,k).y += 0.5*( dtdx*(e(0,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,k+1).x-e(i,j,k).x));
+        b(i,j,k).z += 0.5*( dtdy*(e(i,0,k).x-e(i,j,k).x) - dtdx*(e(0,j,k).y-e(i,j,k).y));
+    }
+    const int k = n-1;
+    b(i,j,k).x += 0.5*(-dtdy*(e(i,0,k).z-e(i,j,k).z) + dtdz*(e(i,j,0).y-e(i,j,k).y));
+    b(i,j,k).y += 0.5*( dtdx*(e(0,j,k).z-e(i,j,k).z) - dtdz*(e(i,j,0).x-e(i,j,k).x));
+    b(i,j,k).z += 0.5*( dtdy*(e(i,0,k).x-e(i,j,k).x) - dtdx*(e(0,j,k).y-e(i,j,k).y));
+}
+
+
+void advance_b_vector_z_periodic(const morton_array<vector3d> & e, morton_array<vector3d> & b) {
+    const unsigned int n = e.get_size();
+
+    for (unsigned int curr = 0; curr < n; curr++) {
+        auto x_next = e.get_x_next(curr);
+        auto y_next = e.get_y_next(curr);
+        auto z_next = e.get_z_next(curr);
+
+        b[curr].x += 0.5*(-dtdy*(e[y_next].z-e[curr].z) + dtdz*(e[z_next].y-e[curr].y));
+        b[curr].y += 0.5*( dtdx*(e[x_next].z-e[curr].z) - dtdz*(e[z_next].x-e[curr].x));
+        b[curr].z += 0.5*( dtdy*(e[y_next].x-e[curr].x) - dtdx*(e[x_next].y-e[curr].y));
+    }
+}
+
+template <typename T>
 void advance_b_vector6d(const T & v) {
     const int n = v.get_n();
 
@@ -448,6 +514,71 @@ void advance_e_vector_z(morton_array<vector3d> & e, const morton_array<vector3d>
 }
 
 template <typename T>
+void advance_e_vector_periodic(T & e, const T & b) {
+    const int n = e.get_n();
+
+    for(int i=1;i<n;i++) {
+        for(int j=1;j<n;j++) {
+            for(int k=1;k<n;k++) {
+                e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,j-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,k-1).y);
+                e(i,j,k).y += -dtdx*(b(i,j,k).z-b(i-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,k-1).x);
+                e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(i-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,j-1,k).x);
+            }
+            const int k = 0;
+            e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,j-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,n-1).y);
+            e(i,j,k).y += -dtdx*(b(i,j,k).z-b(i-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,n-1).x);
+            e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(i-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,j-1,k).x);
+        }
+        const int j = 0;
+        for(int k=1;k<n;k++) {
+            e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,n-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,k-1).y);
+            e(i,j,k).y += -dtdx*(b(i,j,k).z-b(i-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,k-1).x);
+            e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(i-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,n-1,k).x);
+        }
+        const int k = 0;
+        e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,n-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,n-1).y);
+        e(i,j,k).y += -dtdx*(b(i,j,k).z-b(i-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,n-1).x);
+        e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(i-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,n-1,k).x);
+    }
+    const int i = 0;
+    for(int j=1;j<n;j++) {
+        for(int k=1;k<n;k++) {
+            e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,j-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,k-1).y);
+            e(i,j,k).y += -dtdx*(b(i,j,k).z-b(n-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,k-1).x);
+            e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(n-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,j-1,k).x);
+        }
+        const int k = 0;
+        e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,j-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,n-1).y);
+        e(i,j,k).y += -dtdx*(b(i,j,k).z-b(n-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,n-1).x);
+        e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(n-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,j-1,k).x);
+    }
+    const int j = 0;
+    for(int k=1;k<n;k++) {
+        e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,n-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,k-1).y);
+        e(i,j,k).y += -dtdx*(b(i,j,k).z-b(n-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,k-1).x);
+        e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(n-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,n-1,k).x);
+    }
+    const int k = 0;
+    e(i,j,k).x +=  dtdy*(b(i,j,k).z-b(i,n-1,k).z) - dtdz*(b(i,j,k).y-b(i,j,n-1).y);
+    e(i,j,k).y += -dtdx*(b(i,j,k).z-b(n-1,j,k).z) + dtdz*(b(i,j,k).x-b(i,j,n-1).x);
+    e(i,j,k).z +=  dtdx*(b(i,j,k).y-b(n-1,j,k).y) - dtdy*(b(i,j,k).x-b(i,n-1,k).x);
+}
+
+void advance_e_vector_z_periodic(morton_array<vector3d> & e, const morton_array<vector3d> & b) {
+    const unsigned int n = e.get_size();
+
+    for (unsigned int curr = 0; curr < n; curr++) {
+        auto x_prev = e.get_x_prev(curr);
+        auto y_prev = e.get_y_prev(curr);
+        auto z_prev = e.get_z_prev(curr);
+
+        e[curr].x +=  dtdy*(b[curr].z-b[y_prev].z) - dtdz*(b[curr].y-b[z_prev].y);
+        e[curr].y += -dtdx*(b[curr].z-b[x_prev].z) + dtdz*(b[curr].x-b[z_prev].x);
+        e[curr].z +=  dtdx*(b[curr].y-b[x_prev].y) - dtdy*(b[curr].x-b[y_prev].x);
+    }
+}
+
+template <typename T>
 void advance_e_vector6d(T & v) {
     const int n = v.get_n();
 
@@ -544,6 +675,19 @@ void advance_vector_z(morton_array<vector3d> & e, morton_array<vector3d> & b) {
 }
 
 template <typename T>
+void advance_vector_periodic(T & e, T & b) {
+    advance_b_vector_periodic(e, b);
+    advance_e_vector_periodic(e, b);
+    advance_b_vector_periodic(e, b);
+}
+
+void advance_vector_z_periodic(morton_array<vector3d> & e, morton_array<vector3d> & b) {
+    advance_b_vector_z_periodic(e, b);
+    advance_e_vector_z_periodic(e, b);
+    advance_b_vector_z_periodic(e, b);
+}
+
+template <typename T>
 void advance_vector6d(T & v) {
     advance_b_vector6d(v);
     advance_e_vector6d(v);
@@ -614,7 +758,7 @@ void run_test_vector(std::function<void(T&, T&)> func, const std::string & testn
         double avg_sq = inner_product(times.begin(), times.end(), times.begin(), 0.0) / times.size();
         double standard_deviation = sqrt(avg_sq - avg * avg);
         double throughput = (2 * static_cast<double>(mpi_size) * size * size * size * sizeof(vector3d)) / GB * 1e3 / avg; // Gb / s
-        cout << boost::format("%15s ") % testname << boost::format("%5d: ") % size << boost::format("%9.3f ms") % avg
+        cout << boost::format("%15s ") % testname << boost::format("%9.3f ms") % avg
                 << boost::format(" (+-%7.3f ms)") % standard_deviation << boost::format(" %5.2f Gb/s") % throughput
                 << endl;
     }
@@ -817,6 +961,36 @@ void run_checks(int size) {
         advance_vector_z(e2, b2);
 
         if (!is_equal_vector(e1, e2) || !is_equal_vector(b1, b2)) cout << "advance_vector_z is different" << endl;
+
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
+
+        advance_b_vector_periodic(e1, b1);
+        advance_b_vector_z_periodic(e2, b2);
+
+        if (!is_equal_vector(b1, b2)) cout << "advance_b_vector_z_periodic is different" << endl;
+
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
+
+        advance_e_vector_periodic(e1, b1);
+        advance_e_vector_z_periodic(e2, b2);
+
+        if (!is_equal_vector(e1, e2)) cout << "advance_e_vector_z_periodic is different" << endl;
+
+        randomize_vector(e1);
+        e2 = e1;
+        randomize_vector(b1);
+        b2 = b1;
+
+        advance_vector_periodic(e1, b1);
+        advance_vector_z_periodic(e2, b2);
+
+        if (!is_equal_vector(e1, e2) || !is_equal_vector(b1, b2)) cout << "advance_vector_z_periodic is different" << endl;
     }
 
     {
@@ -948,6 +1122,11 @@ int main(int argc, char **argv) {
         run_test_vector<cached_array<vector3d>>(advance_vector<cached_array<vector3d>>, "cached", size, iterations);
         run_test_vector<morton_array<vector3d>>(advance_vector<morton_array<vector3d>>, "morton_bad", size, iterations);
         run_test_vector<morton_array<vector3d>>(advance_vector_z, "morton", size, iterations);
+
+        run_test_vector<simple_array<vector3d>>(advance_vector_periodic<simple_array<vector3d>>, "simple_p", size, iterations);
+        run_test_vector<cached_array<vector3d>>(advance_vector_periodic<cached_array<vector3d>>, "cached_p", size, iterations);
+        run_test_vector<morton_array<vector3d>>(advance_vector_periodic<morton_array<vector3d>>, "morton_bad_p", size, iterations);
+        run_test_vector<morton_array<vector3d>>(advance_vector_z_periodic, "morton_p", size, iterations);
 
         if (mpi_rank == 0) {
             cout << "vector 6d" << endl;
