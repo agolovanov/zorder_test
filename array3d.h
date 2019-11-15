@@ -120,6 +120,28 @@ public:
         yz_mask = y_mask | z_mask;
     }
 
+    morton_array(morton_array<T> & other) :
+        n(other.n),
+        pow(other.pow),
+        x_mask(other.x_mask),
+        y_mask(other.y_mask),
+        z_mask(other.z_mask),
+        xy_mask(other.xy_mask),
+        xz_mask(other.xz_mask),
+        yz_mask(other.yz_mask)
+    {
+        data = std::unique_ptr<T[]>(new T[n * n * n]);
+        cache = std::unique_ptr<unsigned int[]>(new unsigned int[n]);
+
+        for (unsigned int i = 0; i < n * n * n; i++) {
+            data[i] = other.data[i];
+        }
+
+        for (unsigned int i = 0; i < n; i++) {
+            cache[i] = other.cache[i];
+        }
+    }
+
     inline T & operator() (unsigned int i, unsigned int j, unsigned int k) const {
         return data[(cache[i] << 2) | (cache[j] << 1) | cache[k]];
     }
@@ -136,6 +158,17 @@ public:
         memcpy(data.get(), other.data.get(), get_size() * sizeof(T));
 
         return *this;
+    }
+
+    morton_array<T> operator-(morton_array<T> & other) {
+        morton_array<T> res(n);
+        auto n = get_size();
+
+        for (unsigned int i = 0; i < n; i++) {
+            res[i] = data[i] - other[i];
+        }
+
+        return res;
     }
 
     inline bool is_xmin(unsigned int i) const { return ((i & x_mask) == 0); }
