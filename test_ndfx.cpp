@@ -130,14 +130,20 @@ void advance_b_z(const morton_array<vector3d> & e, morton_array<vector3d> & b) {
         auto yz_mp = e.get_z_next(y_m);
 
         if (e.is_xmin(x_m)) {
-            b[curr].y += 0.5*(    dtdx*( bz*(e[x_p].z-e[curr].z) + az*(e[xz_pp].z-e[z_p].z+e[xz_pm].z-e[z_m].z) )    -   dtdz*( bx*(e[z_p].x-e[curr].x) + ax*(e[xz_pp].x-e[x_p].x+e[xz_mp].x-e[x_m].x) )  );
-            b[curr].z += 0.5*(    dtdy*( bx*(e[y_p].x-e[curr].x) + ax*(e[xy_pp].x-e[x_p].x+e[xy_mp].x-e[x_m].x) )    -   dtdx*( by*(e[x_p].y-e[curr].y) + ay*(e[xy_pp].y-e[y_p].y+e[xy_pm].y-e[y_m].y) )  );
+            if (!e.is_ymin(y_m) && !e.is_zmin(z_m)) {
+                b[curr].y += 0.5*(    dtdx*( bz*(e[x_p].z-e[curr].z) + az*(e[xz_pp].z-e[z_p].z+e[xz_pm].z-e[z_m].z) )    -   dtdz*( bx*(e[z_p].x-e[curr].x) + ax*(e[xz_pp].x-e[x_p].x+e[xz_mp].x-e[x_m].x) )  );
+                b[curr].z += 0.5*(    dtdy*( bx*(e[y_p].x-e[curr].x) + ax*(e[xy_pp].x-e[x_p].x+e[xy_mp].x-e[x_m].x) )    -   dtdx*( by*(e[x_p].y-e[curr].y) + ay*(e[xy_pp].y-e[y_p].y+e[xy_pm].y-e[y_m].y) )  );
+            }
         } else if (e.is_ymin(y_m)) {
-            b[curr].x += 0.5*(   -dtdy*( bz*(e[y_p].z-e[curr].z) + az*(e[yz_pp].z-e[z_p].z+e[yz_pm].z-e[z_m].z) )    +   dtdz*( by*(e[z_p].y-e[curr].y) + ay*(e[yz_pp].y-e[y_p].y+e[yz_mp].y-e[y_m].y) )  );
-            b[curr].z += 0.5*(    dtdy*( bx*(e[y_p].x-e[curr].x) + ax*(e[xy_pp].x-e[x_p].x+e[xy_mp].x-e[x_m].x) )    -   dtdx*( by*(e[x_p].y-e[curr].y) + ay*(e[xy_pp].y-e[y_p].y+e[xy_pm].y-e[y_m].y) )  );
+            if (!e.is_xmin(x_m) && !e.is_zmin(z_m)) {
+                b[curr].x += 0.5*(   -dtdy*( bz*(e[y_p].z-e[curr].z) + az*(e[yz_pp].z-e[z_p].z+e[yz_pm].z-e[z_m].z) )    +   dtdz*( by*(e[z_p].y-e[curr].y) + ay*(e[yz_pp].y-e[y_p].y+e[yz_mp].y-e[y_m].y) )  );
+                b[curr].z += 0.5*(    dtdy*( bx*(e[y_p].x-e[curr].x) + ax*(e[xy_pp].x-e[x_p].x+e[xy_mp].x-e[x_m].x) )    -   dtdx*( by*(e[x_p].y-e[curr].y) + ay*(e[xy_pp].y-e[y_p].y+e[xy_pm].y-e[y_m].y) )  );
+            }
         } else if (e.is_zmin(z_m)) {
-            b[curr].x += 0.5*(   -dtdy*( bz*(e[y_p].z-e[curr].z) + az*(e[yz_pp].z-e[z_p].z+e[yz_pm].z-e[z_m].z) )    +   dtdz*( by*(e[z_p].y-e[curr].y) + ay*(e[yz_pp].y-e[y_p].y+e[yz_mp].y-e[y_m].y) )  );
-            b[curr].y += 0.5*(    dtdx*( bz*(e[x_p].z-e[curr].z) + az*(e[xz_pp].z-e[z_p].z+e[xz_pm].z-e[z_m].z) )    -   dtdz*( bx*(e[z_p].x-e[curr].x) + ax*(e[xz_pp].x-e[x_p].x+e[xz_mp].x-e[x_m].x) )  );
+            if (!e.is_xmin(x_m) && !e.is_ymin(y_m)) {
+                b[curr].x += 0.5*(   -dtdy*( bz*(e[y_p].z-e[curr].z) + az*(e[yz_pp].z-e[z_p].z+e[yz_pm].z-e[z_m].z) )    +   dtdz*( by*(e[z_p].y-e[curr].y) + ay*(e[yz_pp].y-e[y_p].y+e[yz_mp].y-e[y_m].y) )  );
+                b[curr].y += 0.5*(    dtdx*( bz*(e[x_p].z-e[curr].z) + az*(e[xz_pp].z-e[z_p].z+e[xz_pm].z-e[z_m].z) )    -   dtdz*( bx*(e[z_p].x-e[curr].x) + ax*(e[xz_pp].x-e[x_p].x+e[xz_mp].x-e[x_m].x) )  );
+            }
         } else {
             b[curr].x += 0.5*(   -dtdy*( bz*(e[y_p].z-e[curr].z) + az*(e[yz_pp].z-e[z_p].z+e[yz_pm].z-e[z_m].z) )    +   dtdz*( by*(e[z_p].y-e[curr].y) + ay*(e[yz_pp].y-e[y_p].y+e[yz_mp].y-e[y_m].y) )  );
             b[curr].y += 0.5*(    dtdx*( bz*(e[x_p].z-e[curr].z) + az*(e[xz_pp].z-e[z_p].z+e[xz_pm].z-e[z_m].z) )    -   dtdz*( bx*(e[z_p].x-e[curr].x) + ax*(e[xz_pp].x-e[x_p].x+e[xz_mp].x-e[x_m].x) )  );
@@ -337,33 +343,51 @@ void advance_e_z(morton_array<vector3d> & e, const morton_array<vector3d> & b) {
     const unsigned int n = e.get_size();
 
     for (unsigned int curr = 0; curr < n; curr++) {
-        if (e.is_xmax(curr) || e.is_ymax(curr) || e.is_zmax(curr)) {
+        if (b.is_xmax(curr) || b.is_ymax(curr) || b.is_zmax(curr)) {
             continue;
         }
 
-        auto x_prev = e.get_x_prev(curr);
-        auto y_prev = e.get_y_prev(curr);
-        auto z_prev = e.get_z_prev(curr);
-
-        if (e.is_xmin(curr)) {
-            if (e.is_ymin(curr) || e.is_zmin(curr)) {
-                continue;
-            } else {
-                e[curr].x +=  dtdy*(b[curr].z-b[y_prev].z) - dtdz*(b[curr].y-b[z_prev].y);
-            }
-        } else if (e.is_ymin(curr)) {
-            if (e.is_zmin(curr)) {
-                continue;
-            } else {
-                e[curr].y += -dtdx*(b[curr].z-b[x_prev].z) + dtdz*(b[curr].x-b[z_prev].x);
-            }
-        } else if (e.is_zmin(curr)) {
-            e[curr].z +=  dtdx*(b[curr].y-b[x_prev].y) - dtdy*(b[curr].x-b[y_prev].x);
-        } else {
-            e[curr].x +=  dtdy*(b[curr].z-b[y_prev].z) - dtdz*(b[curr].y-b[z_prev].y);
-            e[curr].y += -dtdx*(b[curr].z-b[x_prev].z) + dtdz*(b[curr].x-b[z_prev].x);
-            e[curr].z +=  dtdx*(b[curr].y-b[x_prev].y) - dtdy*(b[curr].x-b[y_prev].x);
+        if (b.is_xmin(curr) || b.is_ymin(curr) || b.is_zmin(curr)) {
+            continue;
         }
+
+        auto x_p = b.get_x_next(curr);
+        auto y_p = b.get_y_next(curr);
+        auto z_p = b.get_z_next(curr);
+
+        auto x_m = b.get_x_prev(curr);
+        auto y_m = b.get_y_prev(curr);
+        auto z_m = b.get_z_prev(curr);
+
+        auto xy_mm = b.get_y_prev(x_m);
+        auto xy_pm = b.get_y_prev(x_p);
+        auto xy_mp = b.get_y_next(x_m);
+
+        auto xz_mm = b.get_z_prev(x_m);
+        auto xz_pm = b.get_z_prev(x_p);
+        auto xz_mp = b.get_z_next(x_m);
+
+        auto yz_mm = b.get_z_prev(y_m);
+        auto yz_pm = b.get_z_prev(y_p);
+        auto yz_mp = b.get_z_next(y_m);
+
+        if (b.is_xmin(x_m)) {
+            if (!b.is_ymin(y_m) && !b.is_zmin(z_m)) {
+                e[curr].x = e[curr].x   +   dtdy*( bz*(b[curr].z-b[y_m].z) + az*(b[z_p].z-b[yz_mp].z+b[z_m].z-b[yz_mm].z) )  -   dtdz*( by*(b[curr].y-b[z_m].y) + ay*(b[y_p].y-b[yz_pm].y+b[y_m].y-b[yz_mm].y) );
+            }
+        } else if (b.is_ymin(y_m)) {
+            if (!b.is_xmin(x_m) && !b.is_zmin(z_m)) {
+                e[curr].y = e[curr].y   -   dtdx*( bz*(b[curr].z-b[x_m].z) + az*(b[z_p].z-b[xz_mp].z+b[z_m].z-b[xz_mm].z) )  +   dtdz*( bx*(b[curr].x-b[z_m].x) + ax*(b[x_p].x-b[xz_pm].x+b[x_m].x-b[xz_mm].x) );            }
+        } else if (b.is_zmin(z_m)) {
+            if (!b.is_xmin(x_m) && !b.is_ymin(y_m)) {
+                e[curr].z = e[curr].z   +   dtdx*( by*(b[curr].y-b[x_m].y) + ay*(b[y_p].y-b[xy_mp].y+b[y_m].y-b[xy_mm].y) )  -   dtdy*( bx*(b[curr].x-b[y_m].x) + ax*(b[x_p].x-b[xy_pm].x+b[x_m].x-b[xy_mm].x) );
+            }
+        } else {
+            e[curr].x = e[curr].x   +   dtdy*( bz*(b[curr].z-b[y_m].z) + az*(b[z_p].z-b[yz_mp].z+b[z_m].z-b[yz_mm].z) )  -   dtdz*( by*(b[curr].y-b[z_m].y) + ay*(b[y_p].y-b[yz_pm].y+b[y_m].y-b[yz_mm].y) );
+            e[curr].y = e[curr].y   -   dtdx*( bz*(b[curr].z-b[x_m].z) + az*(b[z_p].z-b[xz_mp].z+b[z_m].z-b[xz_mm].z) )  +   dtdz*( bx*(b[curr].x-b[z_m].x) + ax*(b[x_p].x-b[xz_pm].x+b[x_m].x-b[xz_mm].x) );
+            e[curr].z = e[curr].z   +   dtdx*( by*(b[curr].y-b[x_m].y) + ay*(b[y_p].y-b[xy_mp].y+b[y_m].y-b[xy_mm].y) )  -   dtdy*( bx*(b[curr].x-b[y_m].x) + ax*(b[x_p].x-b[xy_pm].x+b[x_m].x-b[xy_mm].x) );
+        }
+
     }
 }
 
@@ -525,8 +549,6 @@ void run_checks(int size) {
     advance_b_z(e2, b2);
 
     if (!is_equal(b1, b2)) cout << "advance_b_z is different" << endl;
-
-    print_array(b1 - b2);
 
     randomize(e1);
     e2 = e1;
